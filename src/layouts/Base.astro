@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Mark from '../components/Mark.astro';
 import { shop } from '../data/shop';
 
 const stamp = new Intl.DateTimeFormat('cs-CZ', {
@@ -23,12 +24,27 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
     <meta property="og:title" content="Riplay — dílna, kterou si můžeš přehrát" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="cs_CZ" />
+    <meta
+      property="og:description"
+      content="Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl."
+    />
+    <meta property="og:image" content="https://riplay.cz/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Riplay — dílna, kterou si můžeš přehrát" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href="https://riplay.cz/" />
+    <link rel="icon" href="/mark.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
   <body>
     <header class="top">
       <div class="wrap top-in">
-        <a class="wordmark" href="/"><span class="live"></span><b>RI</b>PLAY</a>
+        <a class="wordmark" href="/" aria-label="Riplay — úvod">
+          <Mark size={21} />
+          <span class="wm-txt"><b>RI</b>PLAY</span>
+          <span class="live" aria-hidden="true"></span>
+        </a>
         <nav class="nav" aria-label="Hlavní">
           <a href="#dilna">Dílna</a>
           <a href="#ponk">Na ponku</a>

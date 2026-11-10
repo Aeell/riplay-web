@@ -97,6 +97,7 @@ h1 {
   margin-right: auto;
 }
 .wordmark b { font-weight: 600; }
+.wordmark .wm-txt { white-space: nowrap; }
 .wordmark .live {
   width: 6px;
   height: 6px;
@@ -305,6 +306,25 @@ h1 {
   border: 1px solid var(--line-soft);
 }
 .service { background: var(--bg); padding: 26px 24px 28px; }
+
+/* number and glyph share one hairline row: data on the left, drawing on the right */
+.service-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.service-top .ico { color: var(--dim); }
+
+.ponk-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 880px) {
+  .ponk-grid { grid-template-columns: 1fr; gap: 22px; }
+}
 .service .n {
   font-family: var(--mono);
   font-size: 10px;

@@ -1,7 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import Replay from '../components/Replay.astro';
+import Iso from '../components/Iso.astro';
+import Icon from '../components/Icon.astro';
 import { shop } from '../data/shop';
+
+// presentation only — the data layer stays free of drawing decisions
+const serviceIcon = { '01': 'cad', '02': 'cnc', '03': 'print' } as const;
 
 const episodes = [
   {
@@ -52,7 +57,10 @@ const episodes = [
     <div class="services">
       {shop.services.map((s) => (
         <article class="service">
-          <div class="n">{s.n}</div>
+          <div class="service-top">
+            <div class="n">{s.n}</div>
+            <Icon name={serviceIcon[s.n as keyof typeof serviceIcon]} size={20} />
+          </div>
           <h3>{s.title}</h3>
           <p>{s.text}</p>
           <div class="facts">
@@ -74,19 +82,24 @@ const episodes = [
       <span class="eyebrow">03 / stav dílny</span>
     </div>
 
-    <div class="bench">
-      {shop.bench.map((b) => (
-        <div class="bench-row">
-          <b>{b.n}</b>
-          <span class="svc">{b.s}</span>
-          <span class="state">{b.state}</span>
-          <i class={`dot ${b.tone}`} />
+    <div class="ponk-grid">
+      <div>
+        <div class="bench">
+          {shop.bench.map((b) => (
+            <div class="bench-row">
+              <b>{b.n}</b>
+              <span class="svc">{b.s}</span>
+              <span class="state">{b.state}</span>
+              <i class={`dot ${b.tone}`} />
+            </div>
+          ))}
         </div>
-      ))}
+        <p class="mono dim" style="margin-top:14px">
+          Stav se mění. Když je něco rozestavěné, je to tady vidět — i když to zrovna nefunguje.
+        </p>
+      </div>
+      <Iso />
     </div>
-    <p class="mono dim" style="margin-top:14px">
-      Stav se mění. Když je něco rozestavěné, je to tady vidět — i když to zrovna nefunguje.
-    </p>
   </section>
 
   <section class="sheet wrap" id="denik">

@@ -24,8 +24,12 @@ DOM, no console errors, no horizontal overflow, footer address + `mailto:info@ri
 present.
 
 Front page contents: hero, Replay scrubber over a **sample** part (labelled as a sample —
-constitution rule: nothing unreal), six services with unknown facts rendered as
-`doplní se`, legend of what is real vs. missing, contact CTA, legal footer.
+constitution rule: nothing unreal), three services with unknown facts rendered as
+`doplní se`, an exploded section drawing, the workshop state table, the build journal,
+contact CTA, legal footer.
+
+Visual system added 2026-11-10: brand mark, nine-glyph icon set, exploded assembly
+section, favicon, touch icon and social card — all authored as SVG, see §7.
 
 ---
 
@@ -125,7 +129,45 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 ---
 
-## 7. Rules that must survive the handoff
+## 7. Brand and drawings
+
+Everything visual is authored vector, in the site's own language. There is deliberately no
+icon dependency and **no generated imagery**: a machine-generated photo of a part that has
+not been made would be the exact lie the constitution forbids. When real photos exist they
+replace drawings; drawings never pretend to be photos.
+
+| Path | What |
+|---|---|
+| `src/components/Mark.astro` | the mark: hairline circle (a part) + accent play glyph. Survives 16 px |
+| `public/mark.svg` | same mark as favicon, on a graphite rounded tile |
+| `src/components/Icon.astro` | nine glyphs, 24 px grid, 1.4 stroke, no fills: brief/cad/cam/mill/print/done/cnc/assembly |
+| `src/components/Iso.astro` | exploded assembly as an orthographic section — hatch, bolt centre lines, **no dimensions** |
+| `public/og.png` | 1200×630 social card |
+| `public/apple-touch-icon.png` | 180×180 touch icon |
+| `assets/og.svg` | social card source (not published) |
+
+Regenerate the raster assets after editing their SVG sources:
+
+```bash
+rsvg-convert -w 1200 -h 630 assets/og.svg -o public/og.png
+```
+
+Rules of the system, so it stays one system:
+
+- The accent `#ff5c1a` appears **once per view** — numbers, the play glyph, the Replay
+  progress, or one active state. Never two competing acccents in a section.
+- Icons are stroke-only and inherit `currentColor`; they may never be filled, coloured or
+  rotated. Numbers stay in the mono face, not inside glyphs.
+- The section drawing carries **no dimensions**, only the label `sestava · řez, bez rozměrů`.
+  A number there would read as a real part's spec.
+- Drawings are line art on the same 48/96 px grid as the page background; no gradients, no
+  shadows, no 3D rendering.
+- Screenshots of the site are working artefacts, gitignored (`.shots/`), because the
+  machine's browser cannot always paint while the desktop is idle — use headless Chromium
+  against the dev server instead:
+  `chromium --headless=new --window-size=1440,2900 --screenshot=.shots/full.png http://127.0.0.1:4321/`
+
+## 8. Rules that must survive the handoff
 
 - **Nothing unreal.** No stock photos, no invented numbers, no fake finished projects.
   Anything unknown renders as a visible gap (`doplní se`). This is the whole point of the

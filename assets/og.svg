@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <!-- ground + hairline grid, same 96 px rhythm as the site -->
+  <defs>
+    <pattern id="grid" width="96" height="96" patternUnits="userSpaceOnUse">
+      <path d="M0 0 H96 M0 0 V96" fill="none" stroke="#1a1c1f" stroke-width="1" />
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="#0b0b0c" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <!-- brand -->
+  <g transform="translate(80 72)">
+    <circle cx="14" cy="14" r="12.6" fill="none" stroke="#e9e7e2" stroke-width="1.8" />
+    <path d="M12.2 8.6 L20.1 14 L12.2 19.4 Z" fill="#ff5c1a" />
+    <text x="42" y="20" font-family="monospace" font-size="20" letter-spacing="1.5" fill="#8d8f8d">
+      RIPLAY
+    </text>
+  </g>
+
+  <!-- headline -->
+  <g font-family="sans-serif" fill="#e9e7e2" font-weight="500">
+    <text x="80" y="272" font-size="80" letter-spacing="-3">Dílna, kterou</text>
+    <text x="80" y="358" font-size="80" letter-spacing="-3">si můžeš <tspan fill="#ff5c1a">přehrát</tspan>.</text>
+  </g>
+
+  <!-- claims, all true today -->
+  <text x="82" y="424" font-family="monospace" font-size="22" fill="#8d8f8d" letter-spacing="0.5">
+    CAD · CNC frézování · 3D tisk · přesné díly na míru
+  </text>
+
+  <!-- the signature: six stages, hairlined -->
+  <g stroke="#26282c" stroke-width="1">
+    <path d="M80 508 H1000" />
+    <path d="M80 500 V516 M264 500 V516 M448 500 V516 M632 500 V516 M816 500 V516 M1000 500 V516" />
+  </g>
+  <g font-family="monospace" font-size="19" fill="#5c5f5e" letter-spacing="1.2">
+    <text x="80" y="546">ZADÁNÍ</text>
+    <text x="264" y="546">CAD</text>
+    <text x="448" y="546">CAM</text>
+    <text x="632" y="546">FRÉZA</text>
+    <text x="816" y="546">TISK</text>
+    <text x="1000" y="546" text-anchor="end" fill="#ff5c1a">HOTOVO</text>
+  </g>
+
+  <text x="80" y="600" font-family="monospace" font-size="18" fill="#5c5f5e">
+    riplay.cz · Liberec · jeden člověk a frézka
+  </text>
+
+  <!-- the mark, large, as a technical datum -->
+  <g transform="translate(1010 300)" opacity="0.9">
+    <circle r="128" fill="none" stroke="#26282c" stroke-width="1" />
+    <circle r="96" fill="none" stroke="#26282c" stroke-width="1" stroke-dasharray="3 7" />
+    <path d="M-26 -44 L52 0 L-26 44 Z" fill="#ff5c1a" />
+  </g>
+</svg>

@@ -1,0 +1,111 @@
+---
+/**
+ * Exploded assembly, drawn as an orthographic section: two plates in cut
+ * hatch, two fasteners lifted out of their holes, centre lines running through.
+ * Deliberately dimension-free — a number on this site has to come from a
+ * record, and this is a schema, not a job.
+ */
+const PLATE_W = 268;
+const PLATE_X = 88;
+const PLATE_T = 26;
+const LOWER_Y = 190;
+const UPPER_Y = 118;
+const HOLE_W = 18;
+const HOLES = [PLATE_X + 48, PLATE_X + PLATE_W - 48];
+const HEAD_Y = 54;
+const HEAD_H = 16;
+const HEAD_W = 30;
+const SHAFT_W = 11;
+---
+
+<figure class="iso">
+  <svg viewBox="0 0 444 262" role="img" aria-labelledby="iso-t iso-d">
+    <title id="iso-t">Rozložená sestava: dvě desky a dva šrouby</title>
+    <desc id="iso-d">
+      Řez rozloženou sestavou. Spodní a horní deska se šrafováním, dva šrouby vytažené z děr
+      a osy procházející oběma deskami. Bez rozměrů, nejde o konkrétní zakázku.
+    </desc>
+
+    <defs>
+      <pattern id="isoHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#32363a" stroke-width="1" />
+      </pattern>
+      <mask id="isoHoles" maskUnits="userSpaceOnUse">
+        <rect x="0" y="0" width="444" height="300" fill="#000" />
+        <rect x={PLATE_X} y={LOWER_Y} width={PLATE_W} height={PLATE_T} fill="#fff" />
+        <rect x={PLATE_X} y={UPPER_Y} width={PLATE_W} height={PLATE_T} fill="#fff" />
+        {HOLES.map((x) => <rect x={x - HOLE_W / 2} y={UPPER_Y - 2} width={HOLE_W} height={104} fill="#000" />)}
+      </mask>
+    </defs>
+
+    <!-- centre lines through both fasteners -->
+    <g stroke="var(--dimmer)" stroke-width="1" stroke-dasharray="10 3 2 3" opacity="0.75">
+      {HOLES.map((x) => <line x1={x} y1="40" x2={x} y2="240" />)}
+    </g>
+
+    <!-- the two plates, cut and hatched -->
+    <g mask="url(#isoHoles)">
+      <rect x={PLATE_X} y={LOWER_Y} width={PLATE_W} height={PLATE_T} fill="url(#isoHatch)" />
+      <rect x={PLATE_X} y={UPPER_Y} width={PLATE_W} height={PLATE_T} fill="url(#isoHatch)" />
+    </g>
+    <g fill="none" stroke="var(--ink)" stroke-opacity="0.7" stroke-width="1.2">
+      <rect x={PLATE_X} y={LOWER_Y} width={PLATE_W} height={PLATE_T} />
+      <rect x={PLATE_X} y={UPPER_Y} width={PLATE_W} height={PLATE_T} />
+      {HOLES.map((x) => (
+        <>
+          <path d={`M${x - HOLE_W / 2} ${UPPER_Y} V${UPPER_Y + PLATE_T} M${x + HOLE_W / 2} ${UPPER_Y} V${UPPER_Y + PLATE_T}`} />
+          <path d={`M${x - HOLE_W / 2} ${LOWER_Y} V${LOWER_Y + PLATE_T} M${x + HOLE_W / 2} ${LOWER_Y} V${LOWER_Y + PLATE_T}`} />
+        </>
+      ))}
+    </g>
+
+    <!-- fasteners, lifted out: head then shaft down to the upper plate -->
+    <g stroke="var(--accent)" stroke-width="1.4" fill="none" stroke-linejoin="round">
+      {HOLES.map((x) => (
+        <>
+          <path d={`M${x - HEAD_W / 2} ${HEAD_Y} h${HEAD_W} v6 h-3 l-4 10 h-16 l-4 -10 h-3 z`} />
+          <path d={`M${x - SHAFT_W / 2} ${HEAD_Y + HEAD_H} v${UPPER_Y - HEAD_Y - HEAD_H}`} />
+          <path d={`M${x + SHAFT_W / 2} ${HEAD_Y + HEAD_H} v${UPPER_Y - HEAD_Y - HEAD_H}`} />
+        </>
+      ))}
+    </g>
+
+    <!-- datum crosshair -->
+    <g stroke="var(--dimmer)" stroke-width="1" opacity="0.8">
+      <path d="M386 214 h22 M397 203 v22" />
+      <circle cx="397" cy="214" r="7" fill="none" stroke-opacity="0.55" />
+    </g>
+
+    <text x="24" y="252" fill="var(--dimmer)" font-family="ui-monospace, monospace" font-size="10.5">
+      sestava · řez, bez rozměrů
+    </text>
+  </svg>
+  <figcaption class="mono">
+    Tak vypadá zadání, které se dá vyrobit: dvě desky, dva šrouby, jasné pořadí montáže.
+    Konkrétní rozměry vzniknou až u zakázky.
+  </figcaption>
+</figure>
+
+<style>
+  .iso {
+    margin: 0;
+    border: 1px solid var(--line-soft);
+    background:
+      linear-gradient(var(--line-soft) 1px, transparent 1px) 0 0 / 100% 48px,
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px) 0 0 / 48px 100%,
+      var(--bg);
+    padding: 8px 8px 16px;
+  }
+  .iso svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .iso figcaption {
+    color: var(--dim);
+    font-size: 11px;
+    line-height: 1.7;
+    padding: 10px 12px 0;
+    max-width: 48ch;
+  }
+</style>

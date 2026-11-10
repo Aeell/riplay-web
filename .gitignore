@@ -5,3 +5,4 @@ riplay-site.zip
 .env
 .env.*
 .DS_Store
+.shots/
