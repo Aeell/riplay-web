@@ -4,13 +4,22 @@ A workshop you can replay. One person, precision parts, and a public record of h
 each object was made. Read `docs/00-concept.md` first — it is the constitution; this
 file is only the operating manual.
 
+## Status (2026-11-10)
+
+Live on Netlify: **https://comforting-vacherin-7e37c5.netlify.app**
+`riplay.cz` is **not pointed yet** — DNS is the open item. Deploys are manual zips for
+now. Everything current, including the exact remaining DNS records and the resume
+checklist, is in [`docs/02-handoff.md`](docs/02-handoff.md).
+
 ## Run
 
 ```bash
 npm install
-npm run dev      # http://127.0.0.1:4321
-npm run build    # static output in dist/
+npm run dev -- --port 4321 --host 127.0.0.1   # http://127.0.0.1:4321
+npm run build                                 # static output in dist/
 ```
+
+Always pin the port: this shell exports `PORT=0`.
 
 Node 22+ (this machine: 26). No other services required.
 

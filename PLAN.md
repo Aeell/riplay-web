@@ -25,10 +25,16 @@ One part page renders entirely from data.
 index entry, with no code change.
 
 ### D3 — Hosting and HTTPS **[SHIP]**
-Pick the host (recommend Cloudflare Pages: free, PR previews, no FTP; OVH static
-hosting is the fallback since the domain is already there). Point `riplay.cz` at it,
-retire the OVH parking page, get a valid certificate, deploy a "stavíme" page that
-still says something true.
+**Host chosen 2026-11-10: Netlify — deployed and verified, DNS still pending**
+(`docs/02-handoff.md` §1–2). Netlify rather than Cloudflare Pages, Vercel or GitHub
+Pages: the free tier permits commercial use (Vercel Hobby forbids it, GitHub Pages
+terms exclude business sites), and the apex needs only one `A` record, so the OVH
+nameservers and DNSSEC stay untouched (Cloudflare Pages would want the nameservers
+moved). The OVH VPS of the old site is gone and not returning, so this is static
+hosting with no runtime and no bill.
+
+Remaining in this session: point `riplay.cz` at Netlify, retire the OVH parking page,
+get a valid certificate covering the name.
 
 Known state of the domain (from the OVH export, 2026-11-10): registrar OVH, DNS on OVH
 anycast nameservers, **DNSSEC enabled**, `riplay.cz` and `www` both currently resolve to
