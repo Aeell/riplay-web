@@ -1,0 +1,136 @@
+---
+import Base from '../layouts/Base.astro';
+import Replay from '../components/Replay.astro';
+import { shop } from '../data/shop';
+
+const episodes = [
+  {
+    n: 'EP 00',
+    title: 'Proč pětioska',
+    text:
+      'Malá frézka s DSP11, Raspberry Pi 5 a FlexiHAL. Co fungovalo, co shořelo a proč z toho má být pětiosá mašina s tiskovou hlavou.',
+    tag: 'připravujeme',
+    href: null,
+  },
+  {
+    n: 'EP 01',
+    title: 'Slicer, který neexistuje',
+    text:
+      'Open-source pětiosý slicer pro hobby použití nikdo neudělal pořádně. Začínáme tím, co umí každý — a končíme tam, kde to přestává být pravda.',
+    tag: 'připravujeme',
+    href: null,
+  },
+];
+---
+
+<Base>
+  <section class="hero wrap">
+    <div class="hero-grid">
+      <div>
+        <p class="eyebrow">01 — dílna · Liberec</p>
+        <h1 style="margin-top:18px">Dílna, kterou si můžeš <em>přehrát</em>.</h1>
+        <p class="lead">
+          Jeden člověk, frézka a tiskárna. Dělám díly, které se nedají koupit — a u každého je
+          vidět celá cesta: od fotky přes CAD a dráhy nástroje až po hotový kus v ruce.
+        </p>
+        <div class="hero-meta mono">
+          <span>CAD</span><span>CNC frézování</span><span>3D tisk</span><span>přesné díly</span>
+          <span>i jeden kus</span>
+        </div>
+      </div>
+
+      <Replay />
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="dilna">
+    <div class="sheet-head">
+      <h2>Co se tu dá zadat</h2>
+      <span class="eyebrow">02 / dílna</span>
+    </div>
+
+    <div class="services">
+      {shop.services.map((s) => (
+        <article class="service">
+          <div class="n">{s.n}</div>
+          <h3>{s.title}</h3>
+          <p>{s.text}</p>
+          <div class="facts">
+            {s.facts.map((f) => (
+              <div>
+                <span>{f.k}</span>
+                {f.v ? <b>{f.v}</b> : <b class="gap">doplní se</b>}
+              </div>
+            ))}
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="ponk">
+    <div class="sheet-head">
+      <h2>Co je právě na ponku</h2>
+      <span class="eyebrow">03 / stav dílny</span>
+    </div>
+
+    <div class="bench">
+      {shop.bench.map((b) => (
+        <div class="bench-row">
+          <b>{b.n}</b>
+          <span class="svc">{b.s}</span>
+          <span class="state">{b.state}</span>
+          <i class={`dot ${b.tone}`} />
+        </div>
+      ))}
+    </div>
+    <p class="mono dim" style="margin-top:14px">
+      Stav se mění. Když je něco rozestavěné, je to tady vidět — i když to zrovna nefunguje.
+    </p>
+  </section>
+
+  <section class="sheet wrap" id="denik">
+    <div class="sheet-head">
+      <h2>Deník stavby</h2>
+      <span class="eyebrow">04 / pětiosá mašina + slicer</span>
+    </div>
+
+    {episodes.map((e) => (
+      <article class="ep">
+        <div class="no">{e.n}</div>
+        <div>
+          <h3>{e.title}</h3>
+          <p>{e.text}</p>
+        </div>
+        <span class="tag">{e.tag}</span>
+      </article>
+    ))}
+  </section>
+
+  <section class="sheet wrap" id="zakazka">
+    <div class="sheet-head">
+      <h2>Zadat dílo</h2>
+      <span class="eyebrow">05 / zakázka</span>
+    </div>
+
+    <div class="cta-band">
+      <div>
+        <h2 style="font-size:clamp(22px,2.6vw,30px)">Pošli fotku. Zbytek je na mně.</h2>
+        <p>
+          Nemusíš vědět, jak se to jmenuje ani z čeho to je. Stačí, co to má dělat a kam to má
+          pasovat. Odpovídám do jednoho pracovního dne, s odhadem ceny i termínu.
+        </p>
+        <p style="margin-top:22px">
+          <a class="btn" href={`mailto:${shop.legal.email}?subject=Zak%C3%A1zka%20z%20riplay.cz`}>
+            Napsat poptávku →
+          </a>
+        </p>
+      </div>
+      <div class="cta-steps">
+        <div><em>1</em> Vyfoť to, co chybí nebo nefunguje.</div>
+        <div><em>2</em> Napiš, kam to má pasovat a co to má umět.</div>
+        <div><em>3</em> Do 24 h dostaneš cenu, termín a co od toho čekat.</div>
+      </div>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,179 @@
+---
+import { replay } from '../data/replay';
+
+const stages = replay.stages;
+---
+
+<div class="replay" data-stage="0">
+  <div class="replay-frame">
+    <span class="rp-badge">vzorový díl · čísla ilustrační</span>
+    <div class="rp-hud">
+      <span>materiál <b>{replay.material}</b></span>
+      <span>tolerance <b>{replay.tolerance}</b></span>
+    </div>
+
+    <svg viewBox="0 0 720 470" role="img" aria-labelledby="rp-title rp-desc">
+      <title id="rp-title">{replay.part} — průběh výroby</title>
+      <desc id="rp-desc">{replay.caption}</desc>
+
+      <defs>
+        <rect id="plate" x="210" y="150" width="300" height="170" rx="20" />
+        <rect id="cut" x="240" y="182" width="126" height="74" rx="12" />
+        <path id="platePath" d="M230 150H490A20 20 0 0 1 510 170V300A20 20 0 0 1 490 320H230A20 20 0 0 1 210 300V170A20 20 0 0 1 230 150Z" />
+
+        <mask id="mPart" maskUnits="userSpaceOnUse">
+          <rect x="0" y="0" width="720" height="470" fill="#000" />
+          <use href="#plate" fill="#fff" />
+          <use href="#cut" fill="#000" />
+          <rect x="268" y="318" width="30" height="20" rx="5" fill="#fff" />
+          <rect x="424" y="318" width="30" height="20" rx="5" fill="#fff" />
+        </mask>
+
+        <pattern id="hatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="9" stroke="#5a6067" stroke-width="1" />
+        </pattern>
+      </defs>
+
+      <!-- 0 · sketch -->
+      <g class="l l-sketch">
+        <path d="M213 172C245 156 292 158 352 155C410 152 468 157 502 168C514 178 511 224 512 262C513 296 511 316 498 329C452 337 386 333 316 335C255 337 219 331 208 317C198 300 200 220 213 172Z"
+          fill="none" stroke="#6b6e6c" stroke-width="1.5" stroke-linejoin="round" />
+        <path d="M245 186C275 180 330 181 362 186C372 192 370 236 366 250C320 256 272 255 246 250C240 240 240 196 245 186Z"
+          fill="none" stroke="#6b6e6c" stroke-width="1.3" stroke-dasharray="7 4" />
+        <circle cx="442" cy="202" r="30" fill="none" stroke="#6b6e6c" stroke-width="1.3" stroke-dasharray="9 5" />
+        <path d="M276 306 L296 306 M290 300 L290 312" stroke="#5c5f5e" stroke-width="1" />
+        <path d="M432 330 L452 330 M442 324 L442 336" stroke="#5c5f5e" stroke-width="1" />
+        <text x="300" y="118" fill="#5c5f5e" font-family="ui-monospace, monospace" font-size="11">cca 140 × 80</text>
+        <text x="150" y="132" fill="#4a4d4b" font-family="ui-monospace, monospace" font-size="22">?</text>
+      </g>
+
+      <!-- 1 · CAD -->
+      <g class="l l-cad">
+        <use href="#plate" fill="none" stroke="#c9c7c2" stroke-width="1" />
+        <use href="#cut" fill="none" stroke="#c9c7c2" stroke-width="1" />
+        <circle cx="442" cy="202" r="30" fill="none" stroke="#c9c7c2" stroke-width="1" />
+        <circle cx="442" cy="202" r="22" fill="none" stroke="#8d8f8d" stroke-width="0.8" stroke-dasharray="4 3" />
+        <rect x="268" y="318" width="30" height="20" rx="5" fill="none" stroke="#c9c7c2" stroke-width="1" />
+        <rect x="424" y="318" width="30" height="20" rx="5" fill="none" stroke="#c9c7c2" stroke-width="1" />
+        <circle cx="486" cy="180" r="5" fill="none" stroke="#8d8f8d" stroke-width="0.9" />
+        <circle cx="486" cy="290" r="5" fill="none" stroke="#8d8f8d" stroke-width="0.9" />
+        <path d="M412 202H472M442 172V232" stroke="#4f5450" stroke-width="0.8" stroke-dasharray="8 3 2 3" />
+
+        <!-- dimensions -->
+        <g stroke="#4f5450" stroke-width="0.8">
+          <path d="M210 328V398M510 328V398M210 392H510" />
+          <path d="M210 386V398M510 386V398" />
+          <path d="M204 150H158M204 320H158M164 150V320" />
+          <path d="M158 150H170M158 320H170" />
+        </g>
+        <text x="360" y="384" fill="#7f837f" font-family="ui-monospace, monospace" font-size="10" text-anchor="middle">142</text>
+        <text x="150" y="235" fill="#7f837f" font-family="ui-monospace, monospace" font-size="10" text-anchor="middle" transform="rotate(-90 150 235)">81</text>
+      </g>
+
+      <!-- 2 · CAM -->
+      <g class="l l-cam">
+        <use href="#plate" fill="none" stroke="#3d4145" stroke-width="1" />
+        <rect x="210" y="150" width="300" height="170" fill="url(#hatch)" mask="url(#mPart)" opacity="0.85" />
+        <use href="#cut" fill="#0b0b0c" fill-opacity="0.9" stroke="none" />
+        <circle r="4" fill="#ff5c1a">
+          <animateMotion dur="3.4s" repeatCount="indefinite" rotate="auto">
+            <mpath href="#platePath" />
+          </animateMotion>
+        </circle>
+        <text x="360" y="118" fill="#7f837f" font-family="ui-monospace, monospace" font-size="10" text-anchor="middle">Ø3 · 12 000 rpm · 900 mm/min</text>
+      </g>
+
+      <!-- 3 · milling -->
+      <g class="l l-mill">
+        <use href="#plate" fill="#1d1f22" stroke="#5c6167" stroke-width="1.2" />
+        <rect x="268" y="318" width="30" height="20" rx="5" fill="#1d1f22" stroke="#5c6167" stroke-width="1.1" />
+        <rect x="424" y="318" width="30" height="20" rx="5" fill="#1d1f22" stroke="#5c6167" stroke-width="1.1" />
+        <circle cx="486" cy="180" r="5" fill="#0b0b0c" stroke="#5c6167" stroke-width="1" />
+        <circle cx="486" cy="290" r="5" fill="#0b0b0c" stroke="#5c6167" stroke-width="1" />
+        <circle cx="442" cy="202" r="30" fill="#0b0b0c" stroke="#5c6167" stroke-width="1" />
+        <circle cx="442" cy="202" r="22" fill="none" stroke="#3d4145" stroke-width="1" stroke-dasharray="4 3" />
+        <g fill="#6b6e6c">
+          <circle cx="252" cy="266" r="1.4" /><circle cx="268" cy="272" r="1" /><circle cx="340" cy="268" r="1.2" />
+          <circle cx="470" cy="312" r="1.3" /><circle cx="300" cy="160" r="1" /><circle cx="392" cy="312" r="1.1" />
+        </g>
+      </g>
+
+      <!-- 4 · print -->
+      <g class="l l-print" clip-path="none">
+        <g mask="url(#mPart)" stroke="#5f6468" stroke-width="0.7">
+          {Array.from({ length: 27 }, (_, i) => (
+            <line x1="200" y1={154 + i * 6.2} x2="520" y2={154 + i * 6.2} />
+          ))}
+        </g>
+        <circle cx="442" cy="202" r="30" fill="none" stroke="#8d8f8d" stroke-width="1.2" />
+      </g>
+
+      <!-- 5 · done -->
+      <g class="l l-done">
+        <use href="#plate" fill="#17191c" stroke="#ff5c1a" stroke-width="1.5" />
+        <rect x="268" y="318" width="30" height="20" rx="5" fill="#2a2c30" stroke="#ff5c1a" stroke-width="1.3" />
+        <rect x="424" y="318" width="30" height="20" rx="5" fill="#2a2c30" stroke="#ff5c1a" stroke-width="1.3" />
+        <circle cx="442" cy="202" r="30" fill="#0b0b0c" stroke="#ff5c1a" stroke-width="1.4" />
+        <circle cx="442" cy="202" r="18" fill="none" stroke="#7a4526" stroke-width="1" stroke-dasharray="3 3" />
+        <circle cx="486" cy="180" r="5" fill="#0b0b0c" stroke="#ff5c1a" stroke-width="1.1" />
+        <circle cx="486" cy="290" r="5" fill="#0b0b0c" stroke="#ff5c1a" stroke-width="1.1" />
+        <g stroke="#7a4526" stroke-width="0.8" fill="none">
+          <path d="M466 186 L560 132 L600 132" />
+          <path d="M296 152 L262 108 L214 108" />
+        </g>
+        <text x="604" y="136" fill="#a8a6a1" font-family="ui-monospace, monospace" font-size="10">nabíjecí cívka</text>
+        <text x="210" y="112" fill="#a8a6a1" font-family="ui-monospace, monospace" font-size="10" text-anchor="end">Al 6061 · frézováno</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="replay-bar">
+    <div class="rp-now">
+      <b data-now-k>{stages[0].k}</b>
+      <span data-now-n>{stages[0].n}</span>
+    </div>
+    <input class="rp-range" type="range" min="0" max={stages.length - 1} step="1" value="0"
+      aria-label="Fáze výroby dílu" />
+    <div class="rp-ticks">
+      {stages.map((s, i) => (
+        <button type="button" data-k={s.k} data-n={s.n} data-t={s.t} aria-current={i === 0 ? 'true' : 'false'}>
+          {s.k}<small>{s.t}</small>
+        </button>
+      ))}
+    </div>
+  </div>
+</div>
+
+<script>
+  const LAYERS: [string, number, number][] = [
+    ['.l-cad', 1, 5],
+    ['.l-cam', 2, 2],
+    ['.l-mill', 3, 5],
+    ['.l-print', 4, 5],
+    ['.l-done', 5, 5],
+  ];
+
+  document.querySelectorAll<HTMLElement>('.replay').forEach((root) => {
+    const range = root.querySelector<HTMLInputElement>('.rp-range');
+    const ticks = Array.from(root.querySelectorAll<HTMLButtonElement>('.rp-ticks button'));
+    const nowK = root.querySelector<HTMLElement>('[data-now-k]');
+    const nowN = root.querySelector<HTMLElement>('[data-now-n]');
+    if (!range || !ticks.length) return;
+
+    const paint = (raw: number) => {
+      const s = Math.max(0, Math.min(ticks.length - 1, raw));
+      root.dataset.stage = String(s);
+      range.value = String(s);
+      for (const [sel, min, max] of LAYERS) {
+        root.querySelector(sel)?.classList.toggle('is-on', s >= min && s <= max);
+      }
+      ticks.forEach((b, i) => b.setAttribute('aria-current', i === s ? 'true' : 'false'));
+      if (nowK) nowK.textContent = ticks[s].dataset.k ?? '';
+      if (nowN) nowN.textContent = ticks[s].dataset.n ?? '';
+    };
+
+    range.addEventListener('input', () => paint(Number(range.value)));
+    ticks.forEach((b, i) => b.addEventListener('click', () => paint(i)));
+    paint(0);
+  });
+</script>
