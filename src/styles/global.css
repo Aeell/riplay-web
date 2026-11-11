@@ -124,6 +124,8 @@ h1 {
   font-size: 12px;
   letter-spacing: 0.04em;
   padding: 9px 16px;
+  background: transparent;
+  cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 .btn:hover { background: var(--accent); color: #0b0b0c; }

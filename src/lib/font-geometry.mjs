@@ -174,7 +174,7 @@ export function toSvg(contours, options = {}) {
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" width="${fmt(width)}mm" height="${fmt(height)}mm" viewBox="${fmt(minX)} ${fmt(-minY - height)} ${fmt(width)} ${fmt(height)}">`,
     `<g transform="scale(1,-1)">`,
-    `<path d="${d}" fill="none" stroke="black" stroke-width="${fmt(stroke)}" vector-effect="non-scaling-stroke"/>`,
+    `<path d="${d}" fill="none" stroke="black" stroke-width="${fmt(stroke)}"/>`,
     `</g></svg>`,
   ].join('');
 }
