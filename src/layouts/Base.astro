@@ -16,7 +16,11 @@ const {
   title = 'Riplay — dílna, kterou si můžeš přehrát',
   description = 'Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl.',
 } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
+// The static build writes directories, so Netlify answers /archiv with a 301 to
+// /archiv/. A canonical that points at the redirecting URL is worse than none, so it
+// is built from the URL that actually returns 200.
+const route = Astro.url.pathname === '/' ? '/' : `${Astro.url.pathname.replace(/\/$/, '')}/`;
+const canonical = new URL(route, Astro.site).href;
 ---
 
 <!doctype html>
@@ -52,7 +56,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
           <a href="/#dilna">Dílna</a>
           <a href="/#ponk">Na ponku</a>
           <a href="/#denik">Deník</a>
-          <a href="/archiv">Archiv</a>
+          <a href="/archiv/">Archiv</a>
           <a href="/#zakazka">Zakázka</a>
         </nav>
         <a class="btn" href="/#zakazka">Zadat díl →</a>
@@ -71,7 +75,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).href;
         </span>
         <span>{shop.legal.address}</span>
         <span>
-          <a href="/archiv">archiv staré verze</a> ·
+          <a href="/archiv/">archiv staré verze</a> ·
           <a href="https://github.com/Aeell/riplay-web">zdroj</a>
         </span>
         <span>stav k {stamp}</span>
