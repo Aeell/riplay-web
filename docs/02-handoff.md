@@ -43,19 +43,49 @@ section, favicon, touch icon and social card — all authored as SVG, see §7.
 DNS, in this order — the domain must exist in Netlify **before** the records, or the
 certificate has nothing to attach to.
 
-1. Netlify site → **Domain management** → *Add a domain* → `riplay.cz`.
-   Decline **Netlify DNS**; choose external/self-managed records.
-2. OVH DNS zone — **delete** `A 51.161.122.78` and `AAAA 2001:41d0:701:1100::b909`.
-   That AAAA is what served a certificate not covering the name.
-3. **Add** `A` on `riplay.cz` → `75.2.60.5`, and `CNAME` on `www` →
-   `comforting-vacherin-7e37c5.netlify.app`.
-4. Wait for certificate issued in Netlify, then enable **Force HTTPS**.
-5. Verify: apex + `www` over IPv4 **and** IPv6, valid cert, no parking page, and a
-   deliberate choice of which hostname is primary (`www` → apex redirect is the default
-   the footer/law expects).
+**The zone as it actually is** (OVH authoritative: `ns200` / `dns200.anycast.me`, read
+2026-11-11). This is not a parking zone — it is a live zone with mail in it:
 
-Do **not** move the nameservers away from OVH: DNSSEC is on, and moving them drags the DS
-chain along, which can black out the domain while it is rebuilt.
+| Name | Type | Points at | Action |
+|---|---|---|---|
+| `@` | A | `51.161.122.78` | **replace** → `75.2.60.5` |
+| `@` | AAAA | `2001:41d0:701:1100::b909` | **delete** |
+| `www` | A | `51.161.122.78` | **delete** |
+| `www` | AAAA | `2001:41d0:701:1100::b909` | **delete** |
+| `www` | CNAME | — | **add** → `comforting-vacherin-7e37c5.netlify.app` |
+| `@` | MX ×5 | `mx0`–`mx4.mail.ovh.ca` | **leave alone** — this is the mail |
+| `@` | TXT | `v=spf1 include:mx.ovh.ca ~all` | **leave alone** — mail |
+| `@` | TXT | `1\|www.riplay.cz` | leave — OVH hosting marker |
+| `www` | TXT | `3\|welcome` | leave — OVH hosting marker |
+| `auto`, `cloud`, `dash`, `dl`, `media`, `myst`, `tools` | A | `51.161.122.78` | stale pointers; delete when convenient |
+| `ftp` | CNAME | `riplayb.cluster151.hosting.ovh.net` | leave, or delete |
+
+Steps:
+
+1. Netlify site → **Domain management** → *Add a domain* → `riplay.cz`. Decline
+   **Netlify DNS**; use external/self-managed records.
+2. OVH → delete the two `AAAA` records and the `www` `A` record listed above.
+3. Replace the apex `A` with `75.2.60.5`, and add `CNAME` on `www` →
+   `comforting-vacherin-7e37c5.netlify.app`.
+4. Wait for the certificate to be issued in Netlify, then enable **Force HTTPS**.
+5. Verify apex + `www` over IPv4 **and** IPv6: valid cert, no OVH page, and one deliberate
+   primary hostname (`www` → apex is what the footer and the law expect).
+
+Traps, in order of how much they would hurt:
+
+- **The mail lives in this zone.** `MX` points at `mx0`–`mx4.mail.ovh.ca` with an OVH SPF
+  record, so `info@riplay.cz` depends on these nameservers. Edit the four site records in
+  place; do **not** move the zone to Netlify DNS, because recreating MX and SPF by hand is
+  how a working mailbox goes silent. DNSSEC is enabled (DNSKEY present, DS present), so moving the nameservers would drag the DS chain along as well.
+- **The OVH Starter web hosting plan still exists** — three "websites" on root `www`, with
+  Git in error state and CDN/SSL off. Once Netlify serves the domain it is redundant, but
+  check whether the mailbox is bundled into that plan before cancelling it. Mail is the one
+  thing here that cannot be replaced by pointing a record somewhere else.
+- **Today's HTTPS is already broken**, so this is a repair, not just a migration:
+  `51.161.122.78` answers `404` with a certificate that does not cover `riplay.cz`, and
+  `https://riplay.cz` fails with `SSL: no alternative certificate subject name matches`.
+- The SPF record is duplicated in the OVH export (two identical TXT values). Harmless, and
+  a good reason to edit individual records rather than replace the whole zone.
 
 ---
 
@@ -65,9 +95,11 @@ chain along, which can black out the domain while it is rebuilt.
   use (Vercel Hobby forbids it, GitHub Pages terms exclude business sites), and the apex
   needs one `A` record so OVH nameservers + DNSSEC stay untouched (Cloudflare Pages wants
   the nameservers).
-- **The OVH VPS is gone.** Not paid, not coming back. Consequence: the site is pure static
-  files, so there is no runtime, no monthly bill, no patching. It also means nothing in
-  DNS points at a stale VPS IP — the only records are the two parking ones.
+- **The OVH VPS is gone, but its address is not.** `51.161.122.78` (and the matching
+  `2001:41d0:701:1100::b909`) is still the `A`/`AAAA` for the apex, `www` and seven
+  subdomains, and that host answers HTTPS with a certificate that does not cover
+  `riplay.cz` — which is why the domain has no working HTTPS today. The same zone holds
+  the mail records, so the change has to be surgical (§2) rather than a nameserver move.
 - **`github.com/Aeell/riplay` is not used.** It is a one-shot AI experiment (automation
   agency + client-side toolbox, CS/EN/DE, GA4, its own design system), last pushed May
   2026, previously served from the VPS. The owner's verdict: it does not matter if it is
