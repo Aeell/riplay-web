@@ -38,54 +38,35 @@ section, favicon, touch icon and social card — all authored as SVG, see §7.
 
 ---
 
-## 2. The one thing still between us and riplay.cz
+## 2. riplay.cz is live — cut over 2026-11-11
 
-DNS, in this order — the domain must exist in Netlify **before** the records, or the
-certificate has nothing to attach to.
+Done and verified from the public internet. OVH stays authoritative (`ns200` /
+`dns200.anycast.me` unchanged); only site records moved. Final state:
 
-**The zone as it actually is** (OVH authoritative: `ns200` / `dns200.anycast.me`, read
-2026-11-11). This is not a parking zone — it is a live zone with mail in it:
+| Record | Value |
+|---|---|
+| `riplay.cz` A | `75.2.60.5` (Netlify) |
+| `riplay.cz` AAAA | none — IPv6 clients fall back to IPv4 |
+| `www` CNAME | `comforting-vacherin-7e37c5.netlify.app` |
+| `MX` ×5, SPF TXT, both hosting-marker TXTs | untouched |
+| `auto`…`tools` A, `ftp` CNAME | untouched, now pointless |
 
-| Name | Type | Points at | Action |
-|---|---|---|---|
-| `@` | A | `51.161.122.78` | **replace** → `75.2.60.5` |
-| `@` | AAAA | `2001:41d0:701:1100::b909` | **delete** |
-| `www` | A | `51.161.122.78` | **delete** |
-| `www` | AAAA | `2001:41d0:701:1100::b909` | **delete** |
-| `www` | CNAME | — | **add** → `comforting-vacherin-7e37c5.netlify.app` |
-| `@` | MX ×5 | `mx0`–`mx4.mail.ovh.ca` | **leave alone** — this is the mail |
-| `@` | TXT | `v=spf1 include:mx.ovh.ca ~all` | **leave alone** — mail |
-| `@` | TXT | `1\|www.riplay.cz` | leave — OVH hosting marker |
-| `www` | TXT | `3\|welcome` | leave — OVH hosting marker |
-| `auto`, `cloud`, `dash`, `dl`, `media`, `myst`, `tools` | A | `51.161.122.78` | stale pointers; delete when convenient |
-| `ftp` | CNAME | `riplayb.cluster151.hosting.ovh.net` | leave, or delete |
+- **Primary domain in Netlify is `riplay.cz`**; `www` redirects to it.
+- **Certificate**: Let's Encrypt `CN=riplay.cz`, SAN `riplay.cz` + `www.riplay.cz`, issued
+  2026-11-11 07:52 UTC, expires 2027-02-09. Renewal is automatic.
+- Verified: `https://riplay.cz` → `200`, valid cert, title `Riplay — dílna, kterou si můžeš
+  přehrát`; `http://riplay.cz` → `301 https://riplay.cz/`; `https://www.riplay.cz` → `301
+  https://riplay.cz/`; HSTS `max-age=31536000` plus every `netlify.toml` header
+  (`x-frame-options: DENY`, `nosniff`, `referrer-policy`) present on the custom domain.
+- **IPv6 is verified nowhere**: this laptop's network has no IPv6 route at all
+  (`ipv6.google.com` fails too), so `www` over v6 is untested, not broken.
+- OVH quirks, for the next time: the "add entry" form takes the **subdomain only** (`www`,
+  not `riplay.cz`, or it becomes a root CNAME and is refused), and a CNAME cannot be added
+  while any other record sits on that name — the `www` `TXT` `3|welcome` had to go first.
 
-Steps:
-
-1. Netlify site → **Domain management** → *Add a domain* → `riplay.cz`. Decline
-   **Netlify DNS**; use external/self-managed records.
-2. OVH → delete the two `AAAA` records and the `www` `A` record listed above.
-3. Replace the apex `A` with `75.2.60.5`, and add `CNAME` on `www` →
-   `comforting-vacherin-7e37c5.netlify.app`.
-4. Wait for the certificate to be issued in Netlify, then enable **Force HTTPS**.
-5. Verify apex + `www` over IPv4 **and** IPv6: valid cert, no OVH page, and one deliberate
-   primary hostname (`www` → apex is what the footer and the law expect).
-
-Traps, in order of how much they would hurt:
-
-- **The mail lives in this zone.** `MX` points at `mx0`–`mx4.mail.ovh.ca` with an OVH SPF
-  record, so `info@riplay.cz` depends on these nameservers. Edit the four site records in
-  place; do **not** move the zone to Netlify DNS, because recreating MX and SPF by hand is
-  how a working mailbox goes silent. DNSSEC is enabled (DNSKEY present, DS present), so moving the nameservers would drag the DS chain along as well.
-- **The OVH Starter web hosting plan still exists** — three "websites" on root `www`, with
-  Git in error state and CDN/SSL off. Once Netlify serves the domain it is redundant, but
-  check whether the mailbox is bundled into that plan before cancelling it. Mail is the one
-  thing here that cannot be replaced by pointing a record somewhere else.
-- **Today's HTTPS is already broken**, so this is a repair, not just a migration:
-  `51.161.122.78` answers `404` with a certificate that does not cover `riplay.cz`, and
-  `https://riplay.cz` fails with `SSL: no alternative certificate subject name matches`.
-- The SPF record is duplicated in the OVH export (two identical TXT values). Harmless, and
-  a good reason to edit individual records rather than replace the whole zone.
+Leftovers, none urgent: delete the seven stale subdomain `A` records and the `ftp` CNAME;
+decide on the OVH **Starter** hosting plan (check whether the mailbox is bundled in before
+cancelling); optionally drop the duplicate SPF `TXT`.
 
 ---
 
@@ -180,16 +161,16 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 ## 6. Resume checklist, in order
 
-1. [ ] DNS: the five steps in §2. Then verify externally (apex, `www`, IPv6, cert).
+✅ 1. [ ] DNS: the five steps in §2. Then verify externally (apex, `www`, IPv6, cert).
 2. [x] Netlify is linked to `Aeell/riplay-web` (§5) — a `git push` is now the deploy.
-3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
+✅ 3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
 5. [ ] Real facts still needed from the owner: machine envelope and real tolerance, actual
        part photos, price bands, `IČO`. **`IČO` is blocked on the Czech trade licence**
        (`PLAN.md` D11) — do not fill it in speculatively; the footer renders
        `IČO doplní se` on purpose.
-6. [ ] Tools migration (`/nastroje`) — only after the domain is live; it is a public
+✅ 6. [ ] Tools migration (`/nastroje`) — only after the domain is live; it is a public
        surface and should not be built on a temporary URL.
 
 ---
