@@ -161,16 +161,17 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 ## 6. Resume checklist, in order
 
-✅ 1. [ ] DNS: the five steps in §2. Then verify externally (apex, `www`, IPv6, cert).
+1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering
+   both names, §2. IPv6 still unverified: no v6 route on the laptop.
 2. [x] Netlify is linked to `Aeell/riplay-web` (§5) — a `git push` is now the deploy.
-✅ 3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
+3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
 5. [ ] Real facts still needed from the owner: machine envelope and real tolerance, actual
        part photos, price bands, `IČO`. **`IČO` is blocked on the Czech trade licence**
        (`PLAN.md` D11) — do not fill it in speculatively; the footer renders
        `IČO doplní se` on purpose.
-✅ 6. [ ] Tools migration (`/nastroje`) — only after the domain is live; it is a public
+6. [ ] Tools migration (`/nastroje`) — only after the domain is live; it is a public
        surface and should not be built on a temporary URL.
 
 ---
