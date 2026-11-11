@@ -1,0 +1,194 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+
+type Tool = {
+  n: string;
+  name: string;
+  what: string;
+  tech: string;
+  weight: string;
+  verdict: string;
+  href: string;
+};
+
+// Everything here is taken from the archived repo, not from memory.
+// The order is a decision, not a schedule — no dates are promised.
+const tools: Tool[] = [
+  {
+    n: '01',
+    name: 'GoogleFont2SVG',
+    what: 'Písmo z Google Fonts na skutečné obrysy — SVG cesty a DXF pro laser a frézku.',
+    tech: 'OpenType.js · MakerJS',
+    weight: '968 kB',
+    verdict: 'přenese se první',
+    href: 'https://github.com/Aeell/riplay/tree/main/tools/googlefont2svg',
+  },
+  {
+    n: '02',
+    name: 'Univerzální konvertor',
+    what: 'STL, OBJ, PLY, GLB a DXF mezi sebou, k tomu obrázky, video a PDF. Všechno v prohlížeči.',
+    tech: 'WASM · FFmpeg · ImageMagick · Three.js',
+    weight: '2,0 MB',
+    verdict: 'přenese se druhé',
+    href: 'https://github.com/Aeell/riplay/tree/main/tools/converter',
+  },
+  {
+    n: '03',
+    name: 'Kompresor obrázků',
+    what: 'Zmenšení fotek před nahráním, s náhledem před a po.',
+    tech: 'Canvas API',
+    weight: '40 kB',
+    verdict: 'čeká na rozhodnutí',
+    href: 'https://github.com/Aeell/riplay/tree/main/tools/image-compressor',
+  },
+  {
+    n: '04',
+    name: 'QR studio',
+    what: 'QR kódy s vlastními barvami a logem, export PNG nebo SVG.',
+    tech: 'qrcode-generator',
+    weight: '28 kB',
+    verdict: 'čeká na rozhodnutí',
+    href: 'https://github.com/Aeell/riplay/tree/main/tools/qr-studio',
+  },
+  {
+    n: '05',
+    name: 'PDF toolkit',
+    what: 'Slučování, dělení a otáčení PDF. Komprese velkých souborů běžela na serveru.',
+    tech: 'pdf-lib · pdf.js',
+    weight: '44 kB',
+    verdict: 'čeká na rozhodnutí',
+    href: 'https://github.com/Aeell/riplay/tree/main/tools/pdf-toolkit',
+  },
+];
+
+const facts = [
+  { k: 'období', v: 'únor — květen 2026' },
+  { k: 'co to bylo', v: 'agentura na automatizaci' },
+  { k: 'jazyky', v: 'CS · EN · DE' },
+  { k: 'nástroje', v: 'pět, všechny v prohlížeči' },
+  { k: 'běželo na', v: 'VPS, které už neexistuje' },
+  { k: 'repozitář', v: 'Aeell/riplay, otagované' },
+];
+---
+
+<section class="hero wrap">
+  <p class="eyebrow">06 — archiv · stará verze</p>
+  <h1 style="margin-top:18px">Stará verze zůstala <em>na očích</em>.</h1>
+  <p class="lead">
+    Do května 2026 tu běžel jiný web: RIPlay jako agentura na automatizaci, ve třech
+    jazycích, s pěti nástroji v prohlížeči. Nezmizel. Je v gitu, otagovaný a dohledatelný —
+    protože smazat historii je nejjednodušší způsob, jak začít lhát.
+  </p>
+  <div class="hero-meta mono">
+    <span>archiv, ne produkt</span><span>zdroj zůstává veřejný</span><span>nic tady nepředstírá, že běží</span>
+  </div>
+</section>
+
+<section class="sheet wrap" id="co-to-bylo">
+  <div class="sheet-head">
+    <h2>Co to bylo</h2>
+    <span class="eyebrow">01 / záznam</span>
+  </div>
+
+  <div class="facts" style="max-width:520px;border-top:0;padding-top:0">
+    {facts.map((f) => (
+      <div><span>{f.k}</span><b>{f.v}</b></div>
+    ))}
+  </div>
+
+  <p class="dim" style="max-width:62ch;margin-top:26px">
+    Ten web prodával „agentní AI pro reálný život“ — automatizace, integrace, AI asistenti.
+    Tahle dílna prodává díly. Není to stejná věc a nemá smysl to vydávat za pokračování:
+    zůstaly jen nástroje, protože ty jsou pořád užitečné, a jméno, protože to je pořád
+    stejný člověk u stejného ponku.
+  </p>
+</section>
+
+<section class="sheet wrap" id="nastroje">
+  <div class="sheet-head">
+    <h2>Nástroje a co s nimi</h2>
+    <span class="eyebrow">02 / přenos</span>
+  </div>
+
+  {tools.map((t) => (
+    <article class="ep">
+      <div class="no">{t.n}</div>
+      <div>
+        <h3><a href={t.href}>{t.name}</a></h3>
+        <p>{t.what}</p>
+        <p class="mono dim" style="margin-top:8px;font-size:11px">
+          {t.tech} · {t.weight} zdrojů
+        </p>
+      </div>
+      <span class="tag">{t.verdict}</span>
+    </article>
+  ))}
+
+  <p class="dim" style="max-width:64ch;margin-top:26px">
+    Přenos znamená přepsání do tohoto vizuálního jazyka, ne zkopírování staré stránky:
+    bez Google Analytics, bez cookie lišty, bez knihoven z cizích CDN. Dokud nástroj
+    v nové podobě neexistuje, odkaz vede do archivu na zdroj — ne na polovinu, která
+    „už skoro funguje“.
+  </p>
+  <p class="dim" style="max-width:64ch;margin-top:14px">
+    Poslední tři jsou kancelářské utility, ne dílenské. V plánu proto zůstávají v archivu,
+    dokud se nenajde důvod je přenášet — a protože to rozhodnutí ještě není udělané, není
+    tady napsané jako hotová věc.
+  </p>
+  <p class="mono dim" style="margin-top:14px;font-size:11px">
+    Konvertor je odvozený z <a href="https://github.com/p2r3/convert" style="text-decoration:underline">p2r3/convert</a>
+    a zůstává pod GPL-2.0.
+  </p>
+</section>
+
+<section class="sheet wrap" id="co-zanika">
+  <div class="sheet-head">
+    <h2>Co se nepřenáší</h2>
+    <span class="eyebrow">03 / konec</span>
+  </div>
+
+  <div class="bench">
+    <div class="bench-row"><b>Google Analytics 4</b><span class="svc">měření</span><span class="state">končí — cookie lišta s ním</span><i class="dot warn"></i></div>
+    <div class="bench-row"><b>Německá verze</b><span class="svc">překlad</span><span class="state">končí — čeština a angličtina stačí</span><i class="dot warn"></i></div>
+    <div class="bench-row"><b>Serverové /api</b><span class="svc">VPS</span><span class="state">neexistuje — komprese velkých PDF tím zmizela</span><i class="dot warn"></i></div>
+    <div class="bench-row"><b>Texty agentury</b><span class="svc">copy</span><span class="state">nepravdivé pro dílnu</span><i class="dot warn"></i></div>
+  </div>
+
+  <p class="dim" style="max-width:62ch;margin-top:22px">
+    Poslední bod je důvod, proč tenhle web vznikl znovu od nuly. „Pomáháme firmám
+    zefektivnit procesy“ je věta, kterou nejde vyvrátit. „Tenhle díl jsem vyfrézoval
+    za 46 minut z hliníku 6061“ se dá zkontrolovat.
+  </p>
+</section>
+
+<section class="sheet wrap" id="kde-to-je">
+  <div class="sheet-head">
+    <h2>Kde to leží</h2>
+    <span class="eyebrow">04 / odkaz</span>
+  </div>
+
+  <div class="cta-band">
+    <div>
+      <h2 style="font-size:clamp(22px,2.6vw,30px)">Celý starý web je v jednom repu.</h2>
+      <p>
+        Statické HTML, design system, pět nástrojů, mrtvé API a plány, podle kterých se to
+        stavělo. Otázkou není, jestli to smazat — je to záznam — ale které části si zaslouží
+        druhou verzi.
+      </p>
+      <p style="margin-top:22px">
+        <a class="btn" href="https://github.com/Aeell/riplay">Otevřít archiv →</a>
+      </p>
+    </div>
+    <div class="cta-steps">
+      <div><em>1</em> Repo <span class="mono">Aeell/riplay</span> zůstává veřejné a otagované.</div>
+      <div><em>2</em> Nástroje se přenášejí jeden po druhém, každý jako vlastní session.</div>
+      <div><em>3</em> Co se nepřenese, tady zůstane dohledatelné i s odůvodněním.</div>
+    </div>
+  </div>
+
+  <p class="mono dim" style="margin-top:18px;font-size:11px;display:flex;align-items:center;gap:8px">
+    <Icon name="brief" size={14} />
+    Stránka je záznam o minulé verzi, ne slib, že nástroje budou zítra hotové.
+  </p>
+</section>

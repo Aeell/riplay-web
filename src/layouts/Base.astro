@@ -46,12 +46,13 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
           <span class="live" aria-hidden="true"></span>
         </a>
         <nav class="nav" aria-label="Hlavní">
-          <a href="#dilna">Dílna</a>
-          <a href="#ponk">Na ponku</a>
-          <a href="#denik">Deník</a>
-          <a href="#zakazka">Zakázka</a>
+          <a href="/#dilna">Dílna</a>
+          <a href="/#ponk">Na ponku</a>
+          <a href="/#denik">Deník</a>
+          <a href="/archiv">Archiv</a>
+          <a href="/#zakazka">Zakázka</a>
         </nav>
-        <a class="btn" href="#zakazka">Zadat díl →</a>
+        <a class="btn" href="/#zakazka">Zadat díl →</a>
       </div>
     </header>
 
@@ -66,7 +67,11 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
           {shop.legal.ico ? `IČO ${shop.legal.ico}` : <span class="gap">IČO doplní se</span>}
         </span>
         <span>{shop.legal.address}</span>
-        <span>stav k {stamp} · stránka je otevřený zdroj</span>
+        <span>
+          <a href="/archiv">archiv staré verze</a> ·
+          <a href="https://github.com/Aeell/riplay-web">zdroj</a>
+        </span>
+        <span>stav k {stamp}</span>
       </div>
     </footer>
   </body>

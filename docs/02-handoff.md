@@ -94,21 +94,38 @@ cancelling); optionally drop the duplicate SPF `TXT`.
 
 ---
 
-## 4. Salvage list from the old repo
+## 4. The old site, and what is salvaged from it
 
-Both are pre-built static files (no build step, no `node_modules`), so moving them is
-path rewriting plus testing, not a rebuild. Target path: `/nastroje`.
+`Aeell/riplay` is the previous site: RIPlay as an **automation agency** (Feb–May 2026),
+static HTML in CS/EN/DE with five browser tools, a Node API, served from a VPS that no
+longer exists. It stays public and read-only as the record. A depth-1 clone for inspection
+sits at `~/Projects/riplay-old` — re-clone from GitHub if it is ever removed.
+
+The tool source needs no build step, so moving one is path rewriting plus testing, not a
+rebuild. Target path: `/nastroje`.
 
 | Tool | Size | Why it fits a workshop |
 |---|---|---|
 | `tools/googlefont2svg/` | 968 KB | Font → SVG/DXF paths — real laser/CNC toolpaths from text |
 | `tools/converter/` | 2.0 MB | STL/DXF/PDF conversion in the browser; rescues badly exported customer files |
 
-Skipped on purpose: PDF Toolkit, QR Studio, Image Compressor — office utilities, no
-workshop story, and they'd dilute the single-idea front page.
+The other three — PDF Toolkit, QR Studio, Image Compressor — are office utilities with no
+workshop story. They stay in the archive until there is a reason to port them; that is an
+**open decision, not a queue**, and the site says so rather than promising an order.
 
-A copy of the old repo is at `/tmp/riplay-old` (depth-1 clone) — **temporary**. Re-clone
-from `Aeell/riplay` when the migration session starts.
+**Recorded on the site at `/archiv`** (`src/pages/archiv.astro`, in the nav and footer):
+what the old site was, why the brand moved from automation agency to workshop, all five
+tools with their fate, and what is deliberately dropped —
+
+- Google Analytics 4 and the consent banner (the new site has no third-party tracking)
+- the German version (Czech is the customer language, English the audience language)
+- the `/api` endpoints: they died with the VPS, so server-side compression of large PDFs
+  is gone for good, not "coming back"
+- the agency copy itself: "we help companies streamline processes" is unfalsifiable, which
+  is exactly what this site exists to avoid
+
+Porting a tool means **rewriting it in the current visual language and vendoring its
+libraries** — no third-party CDN, no analytics — never copying the old pages across.
 
 ---
 
@@ -171,8 +188,11 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        part photos, price bands, `IČO`. **`IČO` is blocked on the Czech trade licence**
        (`PLAN.md` D11) — do not fill it in speculatively; the footer renders
        `IČO doplní se` on purpose.
-6. [ ] Tools migration (`/nastroje`) — only after the domain is live; it is a public
-       surface and should not be built on a temporary URL.
+6. [x] Old site archived at `/archiv` (§4): repo kept public, page records what
+       survives and what is deliberately dropped.
+7. [ ] Tools migration (`/nastroje`): port `googlefont2svg` first (CNC/laser text
+       paths), then the converter. Both need de-branding, local libraries and the new
+       visual language. Porting the other three is an open decision (owner's call).
 
 ---
 

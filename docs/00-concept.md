@@ -107,6 +107,7 @@ written as if it is for all three.
 | `/denik/<ep>` | build episode, dated against machine config | maker |
 | `/stroj` | the machine: config table, current state, jobs | maker |
 | `/o` | the person, the bench, the IČO — no resume prose | all |
+| `/archiv` | the previous site as a record: what it was, what survives of it | maker |
 
 ## 8. Technical shape
 

@@ -6,10 +6,10 @@ file is only the operating manual.
 
 ## Status (2026-11-10)
 
-Live on Netlify: **https://comforting-vacherin-7e37c5.netlify.app**
-`riplay.cz` is **not pointed yet** — DNS is the open item. Deploys are manual zips for
-now. Everything current, including the exact remaining DNS records and the resume
-checklist, is in [`docs/02-handoff.md`](docs/02-handoff.md).
+Live on **https://riplay.cz** — `www` redirects to it, and the certificate covers both
+names. Deploys are git-linked: push to `Aeell/riplay-web` and Netlify builds it.
+Everything current, including the resume checklist, is in
+[`docs/02-handoff.md`](docs/02-handoff.md).
 
 ## Run
 
@@ -31,7 +31,7 @@ PLAN.md              30 sessions, each with a done test
 src/styles/          the design language (graphite, hairline grid, one accent)
 src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
-src/pages/           one page so far
+src/pages/           home + /archiv (the previous site, as a record)
 ```
 
 ## Adding a part (from D2)
