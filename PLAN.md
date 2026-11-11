@@ -245,6 +245,28 @@ What brought work, what brought noise. Write the next 30 sessions.
 
 ---
 
+## Outreach — before you e-mail anyone
+
+The owner intends to approach workshops, businesses and possible sponsors or investors.
+Three things must be true before the first message leaves, and two of them are technical:
+
+1. **The address is reachable** (D3b). An outreach campaign sent from a mailbox nobody
+   reads is the worst first impression available.
+2. **The domain authenticates its mail.** Today SPF is present, **DMARC is absent**, and no
+   DKIM selector was found under ten common names — selectors are arbitrary, so confirm in
+   the OVH manager. DMARC (`p=none` first, then `quarantine`) plus DKIM is what keeps the
+   first campaign out of spam folders, and cold mail from an unauthenticated domain is
+   filtered before anyone reads it.
+3. **The list is lawful.** Czech law (480/2004 Sb.) requires prior consent for commercial
+   e-mail; the narrow "existing customer" exception does not cover a scraped list, not even
+   to businesses. So: no bought or scraped lists. Approach named workshops with a message
+   about their actual work, expect to follow up by phone, and count replies, not sends.
+
+**Done (O1):** SPF, DKIM and DMARC all pass on a test send.
+**Done (O2):** ten named targets contacted individually, replies logged, no purchased list.
+
+---
+
 ## Dependencies and risks
 
 | Risk | Effect | Mitigation |

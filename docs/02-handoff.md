@@ -200,6 +200,9 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        `/nastroje` first, then the converter's CAD subset. Each port is a rewrite in the
        current visual language with libraries vendored locally, and must name the audience
        it serves (customer without CNC vocabulary, or partner/maker).
+8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
+       Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
+9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).
 
 ---
 
@@ -250,3 +253,23 @@ Rules of the system, so it stays one system:
   `info@riplay.cz`. Do not reintroduce the old Gmail or the phone number into page copy.
 - `/usr/share/omarchy` is package-owned — unrelated to this repo, but the same instinct
   applies: user content in `src/`, build output in `dist/`, nothing hand-edited in-between.
+
+## 9. Mail: what is proven, and what is not
+
+`info@riplay.cz` is the site's only conversion path — the CTA is a `mailto:` with that
+address. Probed from this machine on 2026-11-11:
+
+- `mx0`/`mx1.mail.ovh.ca` answer `250 2.1.5 Ok` for `info@riplay.cz`
+- a random address on the same domain answers `550 5.1.1 User unknown`
+
+So the mailbox exists, the domain is not catch-all, and mail is being delivered. What is
+**not** proven is access: nobody currently logs in, so the 24-hour reply promise in the CTA
+cannot be kept until the owner recovers the OVH account. That is `PLAN.md` D3b, and it is a
+gate, not a nicety — every other page is worthless if the one contact path is a dead inbox.
+
+Hygiene for the planned outreach campaign: SPF is present; **DMARC is missing** and no DKIM
+selector turned up among ten common names (selectors are arbitrary, so confirm in the OVH
+manager before assuming it is off). Without both, cold mail from this domain is filtered
+before a human sees it. Legally, Czech law (480/2004 Sb.) requires prior consent for
+commercial e-mail, and the "existing customer" exception does not cover a scraped list —
+not even B2B.

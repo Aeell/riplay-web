@@ -139,7 +139,9 @@ must get a file they can cut. A tool that serves neither audience stays in `/arc
   open decision, not a detail to guess at.
 - real machine envelope, achievable tolerances, materials actually cut/printed
 - price bands and realistic lead times
-- contact channel the owner actually answers (phone? WhatsApp? e-mail?)
+- contact channel the owner actually answers (phone? WhatsApp? e-mail?) — as of
+  2026-11-11 `info@riplay.cz` **receives** mail but nobody can log in to it; `PLAN.md`
+  D3b is the gate that closes this
 - whether the workshop is at home or a rented space (affects "visit by appointment")
 - photography: none exists yet; the passports are blocked on real photos
 
