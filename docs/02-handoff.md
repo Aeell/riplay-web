@@ -187,7 +187,7 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering
    both names, §2. IPv6 still unverified: no v6 route on the laptop.
 2. [x] Netlify is linked to `Aeell/riplay-web` (§5) — a `git push` is now the deploy.
-3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
+3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
 5. [ ] Real facts still needed from the owner: machine envelope and real tolerance, actual
