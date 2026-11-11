@@ -7,7 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro check"
+    "check": "astro check",
+    "fonts:catalog": "node scripts/build-font-catalog.mjs"
   },
   "dependencies": {
     "astro": "^5.0.0",

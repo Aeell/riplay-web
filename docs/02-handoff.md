@@ -199,6 +199,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 7. [x] T1 done — `/nastroje` is live with the font→outline converter (`src/pages/nastroje.astro`,
        geometry in `src/lib/font-geometry.mjs`, verifier in `scripts/verify-font2dxf.mjs`).
        Built-in face is Liberation Sans (OFL), 402 KB, plus upload of any TTF/OTF. No CDN.
+       Since 2026-11-11 the same page offers all 1958 Google Fonts families through
+       `/api/font` (`netlify/functions/font.mjs`, no API key) — the browser asks us, we ask
+       Google, and the TTF is cached in memory, in the Cache API and for a year on the CDN.
+       Refresh the catalogue with `npm run fonts:catalog`.
 8. [ ] T2 — the converter's CAD subset (STL/OBJ/PLY/GLB/DXF/SVG/PDF), same rules: vendored
        libraries, rewritten in this visual language, audience named.
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.

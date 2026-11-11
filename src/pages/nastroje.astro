@@ -5,17 +5,18 @@ import Icon from '../components/Icon.astro';
 
 <Base
   title="Nástroje — písmo na dráhu | Riplay"
-  description="Písmo na obrysy pro laser a frézku: SVG a DXF v milimetrech, vše v prohlížeči. Bez registrace, bez CDN, bez nahrávání na server."
+  description="Celý Google Fonts bez klíče: napiš text, vyber písmo a stáhni obrysy v milimetrech jako SVG nebo DXF. Počítá se v prohlížeči, text nikam neodejde."
 >
   <section class="hero wrap">
     <p class="eyebrow">07 — nástroje · písmo</p>
     <h1 style="margin-top:18px">Písmo na <em>dráhu</em>.</h1>
     <p class="lead">
-      Napiš text, vyber soubor s písmem a stáhni obrysy v milimetrech — SVG pro laser,
-      DXF pro frézku. Počítá se to v tvém prohlížeči: písmo ani text nikam neodejde.
+      Napiš text, vyber písmo z celého Google Fonts nebo nahraj vlastní soubor a stáhni
+      obrysy v milimetrech — SVG pro laser, DXF pro frézku. Text zůstává v prohlížeči.
+      Písmo stahujeme my, ne tvoje stránka, takže nikam neposílá ani tvoji IP adresu.
     </p>
     <div class="hero-meta mono">
-      <span>1:1 v milimetrech</span><span>bez registrace</span><span>bez CDN</span><span>zdarma</span>
+      <span>1:1 v milimetrech</span><span id="m-count">celý Google Fonts</span><span>bez klíče</span><span>zdarma</span>
     </div>
   </section>
 
@@ -55,7 +56,32 @@ import Icon from '../components/Icon.astro';
         </div>
 
         <label class="field">
-          <span>Písmo (TTF / OTF)</span>
+          <span>Písmo (Google Fonts)</span>
+          <input
+            id="f-family"
+            list="gf-families"
+            placeholder="začni psát — třeba Lobster"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <datalist id="gf-families"></datalist>
+        </label>
+
+        <div class="pair">
+          <label class="field">
+            <span>Řez</span>
+            <select id="f-weight">
+              <option value="400">400 — regular</option>
+            </select>
+          </label>
+          <label class="field check">
+            <input id="f-italic" type="checkbox" />
+            <span>Kurzíva</span>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>Nebo vlastní soubor (TTF / OTF)</span>
           <input id="f-font" type="file" accept=".ttf,.otf,font/ttf,font/otf" />
         </label>
 
@@ -87,15 +113,17 @@ import Icon from '../components/Icon.astro';
 
     <div class="bench">
       <div class="bench-row"><b>Slučování obrysů</b><span class="svc">union</span><span class="state">ne — písmena jdou do souboru jako samostatné obrysy</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>WOFF / WOFF2</b><span class="svc">formát</span><span class="state">ne — jen TTF a OTF, tedy to, co má frézkaře v počítači</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>Google Fonts online</b><span class="svc">zdroj</span><span class="state">ne — žádné cizí požadavky, písmo si nahraješ</span><i class="dot ok"></i></div>
+      <div class="bench-row"><b>WOFF / WOFF2</b><span class="svc">formát</span><span class="state">ne — TTF a OTF; z Google dostáváš TTF, takže to stačí</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Cizí abecedy</b><span class="svc">abecedy</span><span class="state">ne — stahujeme jen latinku, kvůli velikosti</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Výplň / šrafování</b><span class="svc">CAM</span><span class="state">ne — tohle jsou dráhy, ne obrázek</span><i class="dot warn"></i></div>
     </div>
 
     <p class="dim" style="max-width:62ch;margin-top:22px">
-      Vestavěný řez je Liberation Sans pod licencí SIL OFL 1.1 — licence je přiložená
-      v souboru <span class="mono">/nastroje/LICENSE-liberation.txt</span>. Nahrané písmo
-      zůstává v paměti prohlížeče do zavření stránky; nikam se neposílá.
+      Řezy z Google Fonts zůstávají pod svými licencemi (OFL, Apache 2.0 a podobně) — my je
+      jen stahujeme a převádíme na křivky. Hotový řez si prohlížeč uloží, takže přepínání
+      mezi písmy, která jsi už zkusil, je okamžité i po zavření stránky. Vestavěný
+      Liberation Sans (SIL OFL 1.1) je záloha, která funguje bez sítě; jeho licence leží
+      v <span class="mono">/nastroje/LICENSE-liberation.txt</span>.
     </p>
 
     <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">
@@ -138,6 +166,8 @@ import Icon from '../components/Icon.astro';
     color: var(--dimmer);
   }
   .field input[type='number'],
+  .field input[type='text'],
+  .field select,
   .field textarea,
   .field input[type='file'] {
     background: var(--panel-2);
@@ -149,9 +179,10 @@ import Icon from '../components/Icon.astro';
     width: 100%;
     resize: vertical;
   }
-  .field input[type='number']:focus-visible,
-  .field textarea:focus-visible,
-  .field input[type='file']:focus-visible {
+  .field select { appearance: none; background-image: none; cursor: pointer; }
+  .field input:focus-visible,
+  .field select:focus-visible,
+  .field textarea:focus-visible {
     outline: 1px solid var(--accent);
     outline-offset: 1px;
   }
@@ -217,10 +248,19 @@ import Icon from '../components/Icon.astro';
   const ot = opentypeModule.default ?? opentypeModule;
   const $ = (id) => document.getElementById(id);
   const BUILTIN = '/nastroje/liberation-sans.ttf';
+  const CATALOG = '/nastroje/google-fonts.json';
+  const BUCKET = 'riplay-fonts-v1';
 
-  let font = null;
-  let builtinFont = null;
-  let output = { svg: '', dxf: '' };
+  const state = {
+    font: null,
+    builtin: null,
+    output: { svg: '', dxf: '' },
+    families: null, // [name, category, weights, italic][]
+    byName: new Map(),
+    parsed: new Map(), // key -> opentype font
+    family: null, // the Google family currently chosen
+    controller: null,
+  };
 
   const number = (id, fallback) => {
     const value = parseFloat($(id).value);
@@ -229,19 +269,19 @@ import Icon from '../components/Icon.astro';
 
   function render() {
     const text = $('f-text').value;
-    if (!font) {
+    if (!state.font) {
       $('f-stats').textContent = 'písmo se ještě načítá…';
       return;
     }
     try {
-      const contours = textToContours(font, text, {
+      const contours = textToContours(state.font, text, {
         size: Math.max(1, number('f-size', 50)),
         tracking: number('f-tracking', 0),
         lineHeight: Math.max(0.5, number('f-lh', 1.2)),
         kerning: $('f-kerning').checked,
       });
-      output.svg = toSvg(contours);
-      output.dxf = toDxf(contours);
+      state.output.svg = toSvg(contours);
+      state.output.dxf = toDxf(contours);
       $('f-error').textContent = '';
 
       if (!contours.length) {
@@ -249,7 +289,7 @@ import Icon from '../components/Icon.astro';
         $('f-stats').textContent = '0 obrysů';
         return;
       }
-      $('f-preview').innerHTML = output.svg;
+      $('f-preview').innerHTML = state.output.svg;
       const b = bounds(contours);
       $('f-stats').textContent = `${b.width.toFixed(1)} × ${b.height.toFixed(1)} mm · ${contours.length} obrysů · ${pointCount(contours)} bodů`;
     } catch (error) {
@@ -258,18 +298,205 @@ import Icon from '../components/Icon.astro';
     }
   }
 
+  // --- catalogue -------------------------------------------------------------
+
+  async function catalog() {
+    if (state.families) return state.families;
+    const response = await fetch(CATALOG);
+    if (!response.ok) throw new Error(`katalog písem se nepodařilo načíst (${response.status})`);
+    const { families } = await response.json();
+    state.families = families;
+    for (const entry of families) state.byName.set(entry[0].toLowerCase(), entry);
+
+    const list = $('gf-families');
+    const fragment = document.createDocumentFragment();
+    for (const [family, category] of families) {
+      const option = document.createElement('option');
+      option.value = family;
+      option.label = category;
+      fragment.append(option);
+    }
+    list.append(fragment);
+    $('m-count').textContent = `celý Google Fonts — ${families.length} rodin`;
+    return families;
+  }
+
+  // The catalogue is ~35 KB gzipped; loading it on first touch keeps the page light.
+  // A failed attempt resets the promise, so a later touch retries instead of being stuck.
+  let catalogPromise = null;
+  const ensureCatalog = () =>
+    (catalogPromise ??= catalog().catch((error) => {
+      catalogPromise = null;
+      $('f-error').textContent = error.message;
+      throw error;
+    }));
+
+  for (const type of ['focus', 'pointerdown', 'keydown']) {
+    $('f-family').addEventListener(type, () => { ensureCatalog().catch(() => {}); }, { passive: true });
+  }
+
+  function fillWeights(entry, keep = false) {
+    const select = $('f-weight');
+    const previous = select.value;
+    select.replaceChildren(
+      ...entry[2].map((weight) => {
+        const option = document.createElement('option');
+        option.value = String(weight);
+        option.textContent = weight === 400 ? '400 — regular' : String(weight);
+        return option;
+      }),
+    );
+    select.disabled = false;
+    if (keep && entry[2].includes(Number(previous))) select.value = previous;
+  }
+
+  // --- fetching, with three layers of caching --------------------------------
+
+  async function bytes(url, signal) {
+    const key = new URL(url, location.href).href;
+    let store = null;
+    try {
+      store = await caches.open(BUCKET);
+    } catch {
+      // No Cache API (private mode, old browser): the HTTP cache still does its job.
+    }
+    if (store) {
+      const hit = await store.match(key);
+      if (hit) return { buffer: await hit.arrayBuffer(), cached: true };
+    }
+    const response = await fetch(url, { signal });
+    if (!response.ok) throw new Error(`písmo se nestáhlo (${response.status})`);
+    if (store) await store.put(key, response.clone()).catch(() => {});
+    return { buffer: await response.arrayBuffer(), cached: false };
+  }
+
+  async function loadFamily(family, weight, italic) {
+    const key = `${family}|${weight}|${italic ? 1 : 0}`;
+    const name = `${family} ${weight}${italic ? ' kurzíva' : ''}`;
+
+    // A newer click wins: cancel the request the previous click started, so rapid
+    // switching never leaves a slow font queued up in front of the one you want.
+    state.controller?.abort();
+    state.controller = new AbortController();
+    const signal = state.controller.signal;
+
+    if (state.parsed.has(key)) {
+      state.font = state.parsed.get(key);
+      $('f-font-state').textContent = `${name} — z mezipaměti`;
+      render();
+      return;
+    }
+
+    $('f-font-state').textContent = `${name} — stahuji…`;
+    $('f-stats').textContent = 'stahuji řez písma…';
+    try {
+      const url = `/api/font?family=${encodeURIComponent(family)}&weight=${weight}${italic ? '&italic=1' : ''}`;
+      const { buffer, cached } = await bytes(url, signal);
+      if (signal.aborted) return;
+      const parsed = ot.parse(buffer);
+      state.parsed.set(key, parsed);
+      state.font = parsed;
+      $('f-font-state').textContent = `${name} — ${cached ? 'z mezipaměti prohlížeče' : 'staženo'}`;
+      $('f-error').textContent = '';
+      render();
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      $('f-error').textContent = `${name}: ${error.message}${italic ? ' — tahle rodina možná kurzívu nemá, zkus to bez ní' : ''}`;
+      $('f-stats').textContent = 'písmo se nepodařilo načíst';
+    }
+  }
+
+  function chosen() {
+    ensureCatalog().catch(() => {});
+    const entry = state.byName.get($('f-family').value.trim().toLowerCase());
+    if (!entry && state.families) {
+      $('f-error').textContent = 'Tohle písmo v katalogu není — vyber ho ze seznamu.';
+    }
+    return entry;
+  }
+
+  // Typing a name and pressing Enter can beat the catalogue download; wait for it
+  // instead of declaring a perfectly good font missing.
+  async function pick() {
+    try {
+      await ensureCatalog();
+    } catch {
+      return;
+    }
+    const entry = chosen();
+    if (!entry) return;
+    $('f-error').textContent = '';
+    if (entry[0] !== state.family) {
+      state.family = entry[0];
+      fillWeights(entry);
+    }
+    loadFamily(entry[0], Number($('f-weight').value), $('f-italic').checked);
+  }
+
+  $('f-family').addEventListener('change', pick);
+
+  // Enter should just load it, and stopping on a complete name should load it without
+  // a second gesture — waiting for a blur is what made the original feel slow.
+  $('f-family').addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      pick();
+    }
+  });
+
+  let typing = null;
+  $('f-family').addEventListener('input', () => {
+    clearTimeout(typing);
+    typing = setTimeout(() => {
+      if (state.byName.has($('f-family').value.trim().toLowerCase())) pick();
+    }, 350);
+  });
+  $('f-weight').addEventListener('change', pick);
+  $('f-italic').addEventListener('change', pick);
+
+  // --- built-in and uploaded fonts -------------------------------------------
+
   async function loadBuiltin() {
     $('f-stats').textContent = 'načítám řez písma…';
     const response = await fetch(BUILTIN);
     if (!response.ok) throw new Error(`vestavěné písmo se nepodařilo načíst (${response.status})`);
-    builtinFont = ot.parse(await response.arrayBuffer());
-    font = builtinFont;
+    state.builtin = ot.parse(await response.arrayBuffer());
+    state.font = state.builtin;
     $('f-font-state').textContent = 'vestavěné: Liberation Sans (OFL)';
     render();
   }
 
+  $('f-font').addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      state.controller?.abort();
+      state.font = ot.parse(await file.arrayBuffer());
+      $('f-font-state').textContent = `nahrané: ${file.name}`;
+      $('f-error').textContent = '';
+      render();
+    } catch {
+      state.font = state.builtin;
+      $('f-font-state').textContent = 'vestavěné: Liberation Sans (OFL)';
+      $('f-error').textContent = 'Tohle písmo nepřečtu — potřebuji TTF nebo OTF.';
+      render();
+    }
+  });
+
+  $('f-reset').addEventListener('click', () => {
+    state.controller?.abort();
+    $('f-font').value = '';
+    $('f-family').value = '';
+    state.font = state.builtin;
+    $('f-font-state').textContent = 'vestavěné: Liberation Sans (OFL)';
+    $('f-error').textContent = '';
+    render();
+  });
+
+  // --- output ----------------------------------------------------------------
+
   function download(extension) {
-    const blob = new Blob([output[extension === 'svg' ? 'svg' : 'dxf']], {
+    const blob = new Blob([state.output[extension]], {
       type: extension === 'svg' ? 'image/svg+xml' : 'application/dxf',
     });
     const url = URL.createObjectURL(blob);
@@ -285,35 +512,10 @@ import Icon from '../components/Icon.astro';
   }
   $('f-kerning').addEventListener('change', render);
 
-  $('f-font').addEventListener('change', async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      const parsed = ot.parse(await file.arrayBuffer());
-      font = parsed;
-      $('f-font-state').textContent = `nahrané: ${file.name}`;
-      $('f-error').textContent = '';
-      render();
-    } catch {
-      font = builtinFont;
-      $('f-font-state').textContent = 'vestavěné: Liberation Sans (OFL)';
-      $('f-error').textContent = 'Tohle písmo nepřečtu — potřebuji TTF nebo OTF.';
-      render();
-    }
-  });
-
-  $('f-reset').addEventListener('click', () => {
-    $('f-font').value = '';
-    font = builtinFont;
-    $('f-font-state').textContent = 'vestavěné: Liberation Sans (OFL)';
-    $('f-error').textContent = '';
-    render();
-  });
-
   $('b-svg').addEventListener('click', () => download('svg'));
   $('b-dxf').addEventListener('click', () => download('dxf'));
   $('b-copy').addEventListener('click', async () => {
-    await navigator.clipboard.writeText(output.svg);
+    await navigator.clipboard.writeText(state.output.svg);
     const button = $('b-copy');
     button.textContent = 'Zkopírováno';
     setTimeout(() => { button.textContent = 'Kopírovat SVG kód'; }, 1800);

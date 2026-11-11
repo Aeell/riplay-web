@@ -5,6 +5,10 @@
 [build.environment]
   NODE_VERSION = "22"
 
+# One function: the font proxy. It is the only reason the site needs a runtime at all.
+[functions]
+  directory = "netlify/functions"
+
 # Fingerprinted assets can be cached forever; HTML must never be.
 [[headers]]
   for = "/_astro/*"
@@ -22,3 +26,10 @@
   for = "/*.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"
+
+# The browser asks riplay.cz for a font; the function asks Google. No third-party
+# request is ever made from the page itself.
+[[redirects]]
+  from = "/api/font"
+  to = "/.netlify/functions/font"
+  status = 200

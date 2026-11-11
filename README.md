@@ -23,6 +23,12 @@ Always pin the port: this shell exports `PORT=0`.
 
 Node 22+ (this machine: 26). No other services required.
 
+The font picker calls `/api/font`, which only exists where the function runs — the deployed
+site, or `npx netlify dev`. `npm run preview` serves static files only, so there the picker
+reports that it could not load a font; uploads and the built-in face still work.
+
+To refresh the Google Fonts catalogue (1 request, no key): `npm run fonts:catalog`.
+
 ## Layout
 
 ```
@@ -33,7 +39,8 @@ src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
 src/pages/           home, /archiv (the old site), /nastroje (the toolbox)
 src/lib/             font-geometry.mjs — outlines to SVG/DXF in mm, testable from Node
-scripts/             verify-font2dxf.mjs — proves the exported DXF scale
+netlify/functions/   font.mjs — /api/font, the only server-side code (Google Fonts → TTF)
+scripts/             verify-font2dxf.mjs, build-font-catalog.mjs (the Google Fonts list)
 ```
 
 ## Adding a part (from D2)
