@@ -41,6 +41,27 @@ the OVH form quirks and the certificate dates are in `docs/02-handoff.md` §2.
 **Done:** `https://riplay.cz` serves this build over a valid certificate, no parking page.
 IPv4 verified; IPv6 unverified only because the laptop has no IPv6 route.
 
+### D3b — The contact channel actually works **[gate]**
+
+The site has exactly one conversion path: `mailto:info@riplay.cz` in the CTA. Probed
+2026-11-11 against `mx0`/`mx1.mail.ovh.ca`: the address answers `250 2.1.5 Ok`, while a
+random address on the same domain answers `550 5.1.1 User unknown` — the mailbox exists,
+it is not a catch-all, and OVH delivers to it. **Delivery is not the problem; access is.**
+Nobody can log in to read it today, which makes the CTA's "odpovídám do jednoho
+pracovního dne" a promise the workshop cannot keep.
+
+Owner-only, in this order:
+
+1. Log in to the OVH account that owns `riplay.cz` → **Web Cloud → E-mail → riplay.cz**.
+   If that login is also lost, recover it with the registrar address on file, or ask OVH
+   support with proof of domain ownership (the domain's invoice is enough).
+2. Confirm `info@riplay.cz` exists, reset the password, and look for a **forwarding rule**
+   to an address that no longer exists — a stale forward eats incoming mail silently.
+3. Send a message from a phone to `info@riplay.cz` and open it in OVH webmail.
+
+**Done:** a message sent from outside arrives, is readable, and a reply sent from it lands
+in an inbox the owner actually checks.
+
 ### D4 — Intake **[SHIP]**
 `/zakazka`: photo-first, no account. Realistic v1: the form assembles a pre-filled
 WhatsApp/e-mail message with the photo attached by the sender — no backend, no
