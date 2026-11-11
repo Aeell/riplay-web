@@ -147,12 +147,16 @@ Porting a tool means **rewriting it in the current visual language with its libr
 vendored into the repo** — no third-party CDN, no analytics — never copying the old page
 across. One tool per session; the build must stay small.
 
-### T1 — `/nastroje` + GoogleFont2SVG **[SHIP]**
-Pick a font, type text, get real outlines: SVG paths and DXF. Vendored OpenType.js and
-MakerJS. Serves both audiences — a maker exports DXF for the laser, a customer gets a
-stencil or nameplate they can hand to any cutter.
-**Done:** `/nastroje` exists with one real tool; the network panel shows no third-party
-requests; the exported DXF opens at the right scale in a CAD viewer.
+### T1 — `/nastroje` + GoogleFont2SVG **[SHIP]** ✅ done 2026-11-11
+Pick a font or drop in your own TTF/OTF, type text, get real outlines: SVG and DXF in
+millimetres. Vendored OpenType.js only — the DXF is written by this repo (R12 POLYLINE,
+`$INSUNITS = 4`), so there is no second geometry dependency and the scale is ours to check.
+The old tool pulled fonts from the Google Fonts API with an API key; this one has no
+third-party requests at all, and the built-in face is Liberation Sans under SIL OFL 1.1.
+
+**Done:** measured, not eyeballed — `scripts/verify-font2dxf.mjs` proves cap height equals
+the font's own metric (34.399 mm at a 50 mm em), width scales 1:1, extents in the DXF match
+the computed bounds, and every contour is a closed POLYLINE.
 
 ### T2 — Converter, the CAD subset **[SHIP]**
 The browser converter trimmed to what a workshop actually rescues: STL, OBJ, PLY, GLB,

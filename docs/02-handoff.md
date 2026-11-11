@@ -196,10 +196,11 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        `IČO doplní se` on purpose.
 6. [x] Old site archived at `/archiv` (§4): repo kept public, page records what
        survives and what is deliberately dropped.
-7. [ ] Tools migration — `PLAN.md` T1–T3. Order fixed by the owner: GoogleFont2SVG at
-       `/nastroje` first, then the converter's CAD subset. Each port is a rewrite in the
-       current visual language with libraries vendored locally, and must name the audience
-       it serves (customer without CNC vocabulary, or partner/maker).
+7. [x] T1 done — `/nastroje` is live with the font→outline converter (`src/pages/nastroje.astro`,
+       geometry in `src/lib/font-geometry.mjs`, verifier in `scripts/verify-font2dxf.mjs`).
+       Built-in face is Liberation Sans (OFL), 402 KB, plus upload of any TTF/OTF. No CDN.
+8. [ ] T2 — the converter's CAD subset (STL/OBJ/PLY/GLB/DXF/SVG/PDF), same rules: vendored
+       libraries, rewritten in this visual language, audience named.
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).

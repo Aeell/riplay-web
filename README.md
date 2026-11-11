@@ -31,7 +31,9 @@ PLAN.md              30 sessions, each with a done test
 src/styles/          the design language (graphite, hairline grid, one accent)
 src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
-src/pages/           home + /archiv (the previous site, as a record)
+src/pages/           home, /archiv (the old site), /nastroje (the toolbox)
+src/lib/             font-geometry.mjs — outlines to SVG/DXF in mm, testable from Node
+scripts/             verify-font2dxf.mjs — proves the exported DXF scale
 ```
 
 ## Adding a part (from D2)
