@@ -187,13 +187,15 @@ import Icon from '../components/Icon.astro';
   #f-error { color: var(--warn); min-height: 1em; margin: 0; }
   #f-preview { display: grid; place-items: center; min-height: 180px; }
   #f-preview svg { width: 100%; height: auto; max-height: 340px; }
-  /* a mm-wide stroke is invisible at preview scale, so the preview strokes in pixels */
-  #f-preview svg path {
-    stroke: var(--ink);
+  /* A 0.1 mm stroke is invisible at preview scale, so the preview strokes in pixels.
+     These must be :global() — the SVG arrives through innerHTML, without Astro's
+     scope attribute, so a scoped selector would never match it. */
+  :global(#f-preview svg) { max-width: 100%; color: var(--ink); }
+  :global(#f-preview svg path) {
+    stroke: currentColor;
     stroke-width: 1.4px;
     vector-effect: non-scaling-stroke;
   }
-  #f-preview svg { max-width: 100%; }
   .tool-actions {
     display: flex;
     flex-wrap: wrap;
