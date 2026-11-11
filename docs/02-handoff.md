@@ -101,7 +101,29 @@ npm run dev -- --port 4321 --host 127.0.0.1     # http://127.0.0.1:4321
 npm run build                                    # → dist/
 ```
 
-Deploying by hand while git is unwired:
+### Deploys
+
+The repo `Stanwesly/riplay-web` (public, branch `master`) is the source of truth, and
+`netlify.toml` holds the build contract — `npm run build`, publish `dist`, Node 22,
+long-cache `/_astro/*`, never cache HTML. A clean clone was verified: `npm ci && npm run
+build` produces a 112 KB `dist/` with the page and all assets.
+
+The Netlify site `comforting-vacherin-7e37c5` was created by **Netlify Drop**, so it has no
+repo attached yet. Linking it once is what ends manual uploads, and every later `git
+push` then publishes itself:
+
+1. app.netlify.com → project `comforting-vacherin-7e37c5` → **Project configuration** →
+   **Build & deploy** → **Link repository** (older UI: Settings → Build & deploy →
+   Continuous deployment → Link site to Git).
+2. Choose GitHub → `Stanwesly/riplay-web` → branch `master`. If GitHub is not offered,
+   the Netlify GitHub App must be installed on that repo first — it lives under the
+   GitHub account that owns `Stanwesly`, not under the `Aeell` account.
+3. Leave the build command and publish directory **empty**: `netlify.toml` supplies both.
+   Setting them in the UI as well is how they drift.
+4. Netlify then builds `master` on its own. Note that Drop deploys ignore `netlify.toml`,
+   so security headers and asset caching only start applying after this link.
+
+Until it is linked, the fallback is still a hand deploy:
 
 ```bash
 npm run build && (cd dist && zip -qr ../riplay-site.zip .)
@@ -115,8 +137,8 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 ## 6. Resume checklist, in order
 
 1. [ ] DNS: the five steps in §2. Then verify externally (apex, `www`, IPv6, cert).
-2. [ ] Decide: git-linked deploys or keep dragging zips. Git is worth it the moment real
-       edits start.
+2. [ ] Link the Netlify site to the repo once (§5) — after that a `git push` is the
+       deploy, and manual zips can be forgotten.
 3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
