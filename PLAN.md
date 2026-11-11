@@ -24,29 +24,22 @@ One part page renders entirely from data.
 **Done:** dropping a new `.mdx` file into `parts/` produces a working page and an
 index entry, with no code change.
 
-### D3 — Hosting and HTTPS **[SHIP]**
-**Host chosen 2026-11-10: Netlify — deployed and verified, DNS still pending**
-(`docs/02-handoff.md` §1–2). Netlify rather than Cloudflare Pages, Vercel or GitHub
-Pages: the free tier permits commercial use (Vercel Hobby forbids it, GitHub Pages
-terms exclude business sites), and the apex needs only one `A` record, so the OVH
-nameservers and DNSSEC stay untouched (Cloudflare Pages would want the nameservers
-moved). The OVH VPS of the old site is gone and not returning, so this is static
-hosting with no runtime and no bill.
+### D3 — Hosting and HTTPS **[SHIP]** ✅ done 2026-11-11
 
-Remaining in this session: point `riplay.cz` at Netlify, retire the OVH parking page,
-get a valid certificate covering the name.
+Netlify, git-linked to `Aeell/riplay-web`: a `git push` is the deploy. Why Netlify — the
+free tier permits commercial use (Vercel Hobby forbids it, GitHub Pages terms exclude
+business sites), and the apex needs only one `A` record, so the OVH nameservers and
+DNSSEC stay where they are.
 
-Known state of the domain (from the OVH export, 2026-11-10): registrar OVH, DNS on OVH
-anycast nameservers, **DNSSEC enabled**, `riplay.cz` and `www` both currently resolve to
-OVH shared hosting (A `51.161.122.78`, AAAA `2001:41d0:701:1100::b909`) which serves the
-parking page and a certificate that does not cover the name.
+What the cutover actually was: `A riplay.cz → 75.2.60.5`, the `AAAA` deleted, `www` as a
+`CNAME` to the Netlify site. The zone was **not** a parking zone — it carried five `MX`
+records and an SPF record for OVH mail, which is why records were edited in place instead
+of moving the nameservers. Let's Encrypt issued `CN=riplay.cz` covering `riplay.cz` and
+`www.riplay.cz`; `www` and plain HTTP both 301 to `https://riplay.cz/`. Exact records,
+the OVH form quirks and the certificate dates are in `docs/02-handoff.md` §2.
 
-So: keep the registrar at OVH, and only replace the `A`/`AAAA` (or `CNAME` for `www`)
-records — do not move the nameservers, because that drags DNSSEC (DS records) along with
-it and can black out the domain while the chain is rebuilt. If the host later needs
-Cloudflare DNS, do that as a separate planned step with DNSSEC disabled first at OVH.
-
-**Done:** `https://riplay.cz` serves our build with a valid cert and no parking page.
+**Done:** `https://riplay.cz` serves this build over a valid certificate, no parking page.
+IPv4 verified; IPv6 unverified only because the laptop has no IPv6 route.
 
 ### D4 — Intake **[SHIP]**
 `/zakazka`: photo-first, no account. Realistic v1: the form assembles a pre-filled
@@ -112,6 +105,48 @@ the home country again, which is the slowest link in the whole chain.
 ### D12 — Ship gate 1
 Lighthouse ≥ 95 mobile, accessibility pass, Czech copy proofread by a human.
 **Done:** written verdict: is the site doing its job? Fix the worst thing found.
+
+---
+
+## Tools programme (T1–T3) — the toolbox, and who it is for
+
+The tools are not a side quest and not a utilities directory. They exist for the two
+people who arrive here without wanting to buy a milled part:
+
+| Audience | What they arrive with | What a tool owes them |
+|---|---|---|
+| **Zákazník** — no CNC or 3D-printing vocabulary | a photo, a broken part, a file they cannot open | finishes one thing in under two minutes, no jargon, no sign-up |
+| **Partner / maker** — speaks the language | DXF, STL, toolpaths, tolerances | a file they can actually cut or print, plus what the conversion cost them |
+
+**Rule: every tool names the audience it serves.** A tool that serves neither stays in
+`/archiv` with the reason written down. That is what keeps the toolbox a workshop instead
+of a generic file-utilities site competing with a thousand clones.
+
+Porting a tool means **rewriting it in the current visual language with its libraries
+vendored into the repo** — no third-party CDN, no analytics — never copying the old page
+across. One tool per session; the build must stay small.
+
+### T1 — `/nastroje` + GoogleFont2SVG **[SHIP]**
+Pick a font, type text, get real outlines: SVG paths and DXF. Vendored OpenType.js and
+MakerJS. Serves both audiences — a maker exports DXF for the laser, a customer gets a
+stencil or nameplate they can hand to any cutter.
+**Done:** `/nastroje` exists with one real tool; the network panel shows no third-party
+requests; the exported DXF opens at the right scale in a CAD viewer.
+
+### T2 — Converter, the CAD subset **[SHIP]**
+The browser converter trimmed to what a workshop actually rescues: STL, OBJ, PLY, GLB,
+DXF, SVG, PDF. Keeps the GPL-2.0 notice inherited from `p2r3/convert`. Serves a partner
+first, a customer second ("open this file someone sent me").
+**Done:** a real customer file that arrived in the wrong format is converted and opened.
+
+### T3 — The other three, judged by the rule
+Image compressor, PDF toolkit, QR studio: each either earns a page under the audience rule
+or stays archived. Nothing ships because it already exists.
+**Done:** one decision per tool recorded in `docs/02-handoff.md` §4, each with the
+audience named.
+
+Do not build `/nastroje` as a directory of links to archived pages. A tool appears there
+only after it has been brought over.
 
 ---
 
@@ -220,6 +255,7 @@ What brought work, what brought noise. Write the next 30 sessions.
 | **Domain expires 2027-02-13** | The whole project loses its name mid-build | Enable auto-renew now and set a calendar reminder for 2027-01-13; do this before any code |
 | Scope creep into a slicer startup | Business earns nothing | Slicer work is capped to Phase 2 sessions; customers first |
 | The Replay becomes decoration | Site becomes a normal portfolio | Every stage must carry real data or it does not ship |
+| The toolbox turns into a generic file-utilities site | Dilutes the single idea and competes with clones | The audience rule in the Tools programme: no tool ships without a named audience |
 
 ## What is needed from the owner (blocking, in order)
 

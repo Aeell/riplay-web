@@ -2,9 +2,9 @@
 
 **Status:** definition v0.1, 2026-11-10
 **Domain:** riplay.cz — registered 2026-02-13 at OVH, **expires 2027-02-13**, DNS on OVH
-anycast (`dns200/ns200.anycast.me`), DNSSEC enabled. Both A (`51.161.122.78`) and AAAA
-(`2001:41d0:701:1100::b909`) point at OVH shared hosting, which serves the parking page
-over HTTP with a TLS certificate that does not cover the name.
+anycast (`dns200/ns200.anycast.me`), DNSSEC enabled. Live on Netlify since 2026-11-11
+with a Let's Encrypt certificate covering the apex and `www`. The mail records in the
+same zone are why the nameservers stay at OVH — see `docs/02-handoff.md` §2.
 **Owner:** one person, workshop at Mokrá 68, Liberec – Machnín. **Trade licence not yet
 issued** (EU national, awaiting a criminal-record extract from the home country), so no
 page may claim OSVČ status, and no page may be published in a state that implies it.
@@ -70,6 +70,10 @@ The first audience pays the bills. The second creates reach and credibility. The
 is the upside. Every page must be useful to at least one of them and must not be
 written as if it is for all three.
 
+The toolbox (`/nastroje`) is the one surface built for the **first two only**: someone
+who will never buy a milled part must finish one small task in two minutes, and a maker
+must get a file they can cut. A tool that serves neither audience stays in `/archiv`.
+
 ## 5. The constitution (non-negotiable rules)
 
 1. **Nothing unreal.** No stock photos, no invented reviews, no "we" when it is one
@@ -108,6 +112,7 @@ written as if it is for all three.
 | `/stroj` | the machine: config table, current state, jobs | maker |
 | `/o` | the person, the bench, the IČO — no resume prose | all |
 | `/archiv` | the previous site as a record: what it was, what survives of it | maker |
+| `/nastroje` | the toolbox: tools that finish one thing, for a customer or a partner | both |
 
 ## 8. Technical shape
 
@@ -123,8 +128,8 @@ written as if it is for all three.
   If a layout choice would look at home on a SaaS site, it is wrong.
 - **Performance budget:** LCP under 1.5 s on a mid-range phone, no webfonts blocking
   text, images as AVIF/WebP.
-- **Hosting:** static upload. OVH (where the domain already lives) or Cloudflare
-  Pages. Decide on Day 3; keep the build portable either way.
+- **Hosting:** Netlify, git-linked — a push is a deploy (D3). Static output, no runtime;
+  the build stays portable so the host can change without touching content.
 
 ## 9. Known unknowns (must be filled, and the site shows them unfilled)
 

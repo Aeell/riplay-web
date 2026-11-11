@@ -127,6 +127,12 @@ tools with their fate, and what is deliberately dropped —
 Porting a tool means **rewriting it in the current visual language and vendoring its
 libraries** — no third-party CDN, no analytics — never copying the old pages across.
 
+**The order is decided (owner, 2026-11-11):** GoogleFont2SVG first, then the converter.
+Later the toolbox is meant to hold tools for **both kinds of visitor** — the customer who
+knows nothing about CNC or 3D printing, and the partner/maker who speaks the language.
+That rule is written into `PLAN.md` as the Tools programme (T1–T3): a tool ships only if
+it can name the audience it serves, and the other three are judged against it in T3.
+
 ---
 
 ## 5. Working locally
@@ -190,9 +196,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        `IČO doplní se` on purpose.
 6. [x] Old site archived at `/archiv` (§4): repo kept public, page records what
        survives and what is deliberately dropped.
-7. [ ] Tools migration (`/nastroje`): port `googlefont2svg` first (CNC/laser text
-       paths), then the converter. Both need de-branding, local libraries and the new
-       visual language. Porting the other three is an open decision (owner's call).
+7. [ ] Tools migration — `PLAN.md` T1–T3. Order fixed by the owner: GoogleFont2SVG at
+       `/nastroje` first, then the converter's CAD subset. Each port is a rewrite in the
+       current visual language with libraries vendored locally, and must name the audience
+       it serves (customer without CNC vocabulary, or partner/maker).
 
 ---
 
