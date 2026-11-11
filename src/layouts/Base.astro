@@ -8,6 +8,15 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
   month: 'long',
   year: 'numeric',
 }).format(new Date());
+
+// Every page carries its own title/description; the home page values are the
+// defaults so a new page cannot silently inherit the wrong one.
+type Props = { title?: string; description?: string };
+const {
+  title = 'Riplay — dílna, kterou si můžeš přehrát',
+  description = 'Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl.',
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <!doctype html>
@@ -15,25 +24,19 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Riplay — dílna, kterou si můžeš přehrát</title>
-    <meta
-      name="description"
-      content="Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl."
-    />
+    <title>{title}</title>
+    <meta name="description" content={description} />
     <meta name="theme-color" content="#0b0b0c" />
-    <meta property="og:title" content="Riplay — dílna, kterou si můžeš přehrát" />
+    <meta property="og:title" content={title} />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="cs_CZ" />
-    <meta
-      property="og:description"
-      content="Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl."
-    />
+    <meta property="og:description" content={description} />
     <meta property="og:image" content="https://riplay.cz/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Riplay — dílna, kterou si můžeš přehrát" />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="canonical" href="https://riplay.cz/" />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/mark.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   </head>
