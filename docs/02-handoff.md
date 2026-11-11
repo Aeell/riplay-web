@@ -9,19 +9,24 @@ Read this first, then `docs/00-concept.md` (the rules) and `PLAN.md` (the sessio
 
 | | |
 |---|---|
-| Source | `github.com/Stanwesly/riplay-web` — **public**, branch `master` |
+| Source | `github.com/Aeell/riplay-web` — **public**, branch `master` |
 | Local path | `~/Projects/riplay` |
 | Astro | 5.18.2 (a v7 exists; deliberately not migrating) |
-| Build | `npm run build` → `dist/` — one page, ~24 KB total, no webfonts |
+| Build | `npm run build` → `dist/` — one page, ~112 KB incl. the PNG icons, no webfonts |
 | **Live** | **https://comforting-vacherin-7e37c5.netlify.app** |
 | Custom domain | `riplay.cz` — **not yet pointed**, still OVH parking |
-| Deploy method | Netlify **Drop** (manual zip upload). No git link yet. |
+| Deploy method | **git-linked** → `Aeell/riplay-web` `master`; a push is the deploy |
 
 Verified live on 2026-11-10, measured from outside the browser:
 HTTP 200 over HTTPS with HSTS, design-system CSS loading (`body` = `rgb(11,11,12)`),
 headline `Dílna, kterou si můžeš přehrát.`, all six Replay stages and the scrubber in the
 DOM, no console errors, no horizontal overflow, footer address + `mailto:info@riplay.cz`
 present.
+
+Re-verified 2026-11-11, after the move to a git-linked deploy: `/_astro/*.css` 200
+`text/css`, `/mark.svg` 200 `image/svg+xml`, `/og.png` and `/apple-touch-icon.png` 200
+`image/png`, `og:image` at 1200×630, and `x-frame-options: DENY` present — the first
+proof that `netlify.toml` is honoured, since Drop deploys ignored it.
 
 Front page contents: hero, Replay scrubber over a **sample** part (labelled as a sample —
 constitution rule: nothing unreal), three services with unknown facts rendered as
@@ -67,9 +72,12 @@ chain along, which can black out the domain while it is rebuilt.
   agency + client-side toolbox, CS/EN/DE, GA4, its own design system), last pushed May
   2026, previously served from the VPS. The owner's verdict: it does not matter if it is
   replaced. It stays public and untouched as an archive. The new site lives in
-  `Stanwesly/riplay-web`.
-- **Deploy is manual (Drop) for now.** Wiring git is an open decision, not an oversight:
-  it costs a collaborator invite or a Netlify account switch.
+  `Aeell/riplay-web`.
+- **Deploy is git-linked (2026-11-11).** Netlify is authorised for the GitHub identity
+  `Aeell`, and a Netlify repo picker only lists repos of that identity. The repo was first
+  created under `Stanwesly`, so it could never appear. The fix was to move the repo to
+  `Aeell` and link it — not a collaborator invite, and not a deploy token in CI.
+  `Stanwesly/riplay-web` survives as a stale mirror; do not push to it.
 
 ---
 
@@ -103,27 +111,31 @@ npm run build                                    # → dist/
 
 ### Deploys
 
-The repo `Stanwesly/riplay-web` (public, branch `master`) is the source of truth, and
-`netlify.toml` holds the build contract — `npm run build`, publish `dist`, Node 22,
-long-cache `/_astro/*`, never cache HTML. A clean clone was verified: `npm ci && npm run
-build` produces a 112 KB `dist/` with the page and all assets.
+**`Aeell/riplay-web`** (public, branch `master`) is the source of truth and is linked to the
+Netlify site as of 2026-11-11, so a `git push` is the deploy and the Drop workflow is
+retired. `netlify.toml` carries the build contract — `npm run build`, publish `dist`, Node
+22, long-cache `/_astro/*`, never cache HTML — and the UI fields for build command and
+publish directory are left **empty** on purpose, because duplicating them there is how the
+two drift apart.
 
-The Netlify site `comforting-vacherin-7e37c5` was created by **Netlify Drop**, so it has no
-repo attached yet. Linking it once is what ends manual uploads, and every later `git
-push` then publishes itself:
+A clean clone was verified before linking: `npm ci && npm run build` produces a 112 KB
+`dist/` with the page and every asset.
 
-1. app.netlify.com → project `comforting-vacherin-7e37c5` → **Project configuration** →
-   **Build & deploy** → **Link repository** (older UI: Settings → Build & deploy →
-   Continuous deployment → Link site to Git).
-2. Choose GitHub → `Stanwesly/riplay-web` → branch `master`. If GitHub is not offered,
-   the Netlify GitHub App must be installed on that repo first — it lives under the
-   GitHub account that owns `Stanwesly`, not under the `Aeell` account.
-3. Leave the build command and publish directory **empty**: `netlify.toml` supplies both.
-   Setting them in the UI as well is how they drift.
-4. Netlify then builds `master` on its own. Note that Drop deploys ignore `netlify.toml`,
-   so security headers and asset caching only start applying after this link.
+Why the account swap was necessary: Netlify is authorised for the GitHub identity `Aeell`,
+and its repo picker only lists repositories belonging to that identity. The project was
+first created under `Stanwesly`, which is why the picker showed every `Aeell` repo and no
+`riplay-web`. Moving the repo was the fix; a collaborator invite or a deploy token in CI
+would both have papered over the same mismatch.
 
-Until it is linked, the fallback is still a hand deploy:
+Local consequences:
+
+```bash
+gh auth switch --user Aeell       # the active gh account on this machine is now Aeell
+gh auth switch --user Stanwesly   # switch back for other projects on this box
+git remote -v                     # origin = Aeell/riplay-web; stanwesly = stale mirror
+```
+
+The old hand deploy still works, but it no longer publishes the site:
 
 ```bash
 npm run build && (cd dist && zip -qr ../riplay-site.zip .)
@@ -137,8 +149,7 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 ## 6. Resume checklist, in order
 
 1. [ ] DNS: the five steps in §2. Then verify externally (apex, `www`, IPv6, cert).
-2. [ ] Link the Netlify site to the repo once (§5) — after that a `git push` is the
-       deploy, and manual zips can be forgotten.
+2. [x] Netlify is linked to `Aeell/riplay-web` (§5) — a `git push` is now the deploy.
 3. [ ] Push the domain decision back into `PLAN.md` D3 and tick it.
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.

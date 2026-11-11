@@ -56,7 +56,7 @@ than none, because the next session trusts it.
 - **npm, not bun** (bun is not installed here).
 - **Astro 5.18.2 is pinned deliberately.** The installer advertises v7; do not migrate as
   a side effect of an unrelated task.
-- Repo: `github.com/Stanwesly/riplay-web`, now **public**, branch `master`.
+- Repo: `github.com/Aeell/riplay-web`, now **public**, branch `master`.
   Local: `~/Projects/riplay`.
 - `github.com/Aeell/riplay` is the **owner's old one-shot AI experiment** (automation agency
   + client-side toolbox). It is an archive: do not resurrect it, do not "finish" it, do not
