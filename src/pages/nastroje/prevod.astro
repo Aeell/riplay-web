@@ -4,32 +4,33 @@ import Icon from '../../components/Icon.astro';
 ---
 
 <Base
-  title="Nástroje — převod 3D souborů | Riplay"
-  description="STL, OBJ, PLY a GLB mezi sebou, v prohlížeči: přetáhni soubor a stáhni ho v jiném formátu. Nic se nenahrává na server."
+  title="Nástroje — převod souborů | Riplay"
+  description="STL, OBJ, PLY, GLB mezi sebou a SVG ↔ DXF v milimetrech, v prohlížeči. Přetáhni soubor a stáhni ho v jiném formátu, nic se nenahrává."
 >
   <section class="hero wrap">
     <p class="eyebrow">08 — nástroje · soubory</p>
     <h1 style="margin-top:18px">Soubor, který se <em>otevře</em>.</h1>
     <p class="lead">
-      Někdo pošle model a stroj ho nepřečte. Přetáhni STL, OBJ, PLY nebo GLB a stáhni ho
-      v jiném z těch čtyř formátů — převod běží v tvém prohlížeči, soubor se nikam nenahrává.
+      Někdo pošle model nebo kresbu a stroj to nepřečte. Přetáhni <b>STL, OBJ, PLY, GLB</b>
+      nebo <b>SVG, DXF</b> a stáhni to v jiném formátu — převod běží v tvém prohlížeči,
+      soubor se nikam nenahrává.
     </p>
     <div class="hero-meta mono">
-      <span>STL · OBJ · PLY · GLB</span><span>bez registrace</span><span>bez nahrávání</span><span>zdarma</span>
+      <span>3D: STL · OBJ · PLY · GLB</span><span>2D: SVG ↔ DXF</span><span>v milimetrech</span><span>zdarma</span>
     </div>
   </section>
 
   <section class="sheet wrap" id="nastroj">
     <div class="sheet-head">
       <h2>Převodník</h2>
-      <span class="eyebrow">01 / síť → síť</span>
+      <span class="eyebrow">01 / soubor → soubor</span>
     </div>
 
     <div class="tool">
       <div class="tool-controls">
         <label class="field">
-          <span>Model (STL / OBJ / PLY / GLB)</span>
-          <input id="f-file" type="file" accept=".stl,.obj,.ply,.glb" />
+          <span>Model nebo kresba (STL / OBJ / PLY / GLB / SVG / DXF)</span>
+          <input id="f-file" type="file" accept=".stl,.obj,.ply,.glb,.svg,.dxf" />
         </label>
 
         <div class="pair">
@@ -54,13 +55,24 @@ import Icon from '../../components/Icon.astro';
 
       <div class="tool-preview" id="f-drop">
         <p class="mono dim" id="f-drop-hint">přetáhni soubor sem</p>
-        <dl class="readout" id="f-readout" hidden>
+
+        <dl class="readout" id="m-readout" hidden>
           <div><dt>formát</dt><dd id="r-format">—</dd></div>
           <div><dt>trojúhelníků</dt><dd id="r-tris">—</dd></div>
           <div><dt>vrcholů</dt><dd id="r-verts">—</dd></div>
           <div><dt>rozměry</dt><dd id="r-size">—</dd></div>
           <div><dt>objem</dt><dd id="r-volume">—</dd></div>
         </dl>
+
+        <dl class="readout" id="p-readout" hidden>
+          <div><dt>formát</dt><dd id="q-format">—</dd></div>
+          <div><dt>obrysů</dt><dd id="q-contours">—</dd></div>
+          <div><dt>uzavřených</dt><dd id="q-closed">—</dd></div>
+          <div><dt>bodů</dt><dd id="q-points">—</dd></div>
+          <div><dt>rozměry</dt><dd id="q-size">—</dd></div>
+        </dl>
+
+        <p class="mono dim" id="q-notes" hidden></p>
       </div>
     </div>
 
@@ -77,17 +89,21 @@ import Icon from '../../components/Icon.astro';
     </div>
 
     <div class="bench">
-      <div class="bench-row"><b>PDF, DXF, SVG</b><span class="svc">2D</span><span class="state">ne — zatím jen 3D sítě; 2D cesty přijdou později</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>GLTF s externí .bin</b><span class="svc">formát</span><span class="state">ne — jeden soubor; .glb je v pořádku</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>PDF</b><span class="svc">formát</span><span class="state">ne — PDF je stránka, ne dráha; převod by byl obrázek</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Text v SVG</b><span class="svc">2D</span><span class="state">ne — musí být obrysy; text převeď nástrojem výš</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>GLTF s externí .bin</b><span class="svc">3D</span><span class="state">ne — jeden soubor; .glb je v pořádku</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Materiály a textury</b><span class="svc">vzhled</span><span class="state">ne — zahazují se, zůstává geometrie</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>Jednotky</b><span class="svc">měřítko</span><span class="state">soubor je nenese — proto je měřítko na tobě</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Jednotky</b><span class="svc">měřítko</span><span class="state">3D soubor je nenese — proto je měřítko na tobě</span><i class="dot warn"></i></div>
     </div>
 
     <p class="dim" style="max-width:62ch;margin-top:22px">
-      Formáty čte a zapisuje tenhle web sám, bez cizí knihovny — takže tu není žádná
-      licence třetí strany a velikost stránky zůstává malá. Výsledek je vždy trojúhelníková
-      síť: quad se rozpustí na dva trojúhelníky, křivky a materiály se ztratí. STL ani OBJ
-      jednotky neukládají, takže rozměr je jen číslo — měřítko nastav ručně.
+      Všechny formáty čte a zapisuje tenhle web sám, bez cizí knihovny — žádná licence třetí
+      strany a malá stránka. Trojúhelníky zůstávají trojúhelníky (quad se rozpustí na dva),
+      materiály se ztratí. SVG se počítá podle <span class="mono">width</span> a
+      <span class="mono">viewBox</span> do milimetrů; když rozměr chybí, bere se 1 jednotka
+      jako 1 mm a nástroj to napíše. DXF se čte v jednotkách z hlavičky
+      (<span class="mono">$INSUNITS</span>). Soubory nad 40 MB nástroj odmítne — větší model
+      patří do sliceru, tady by zamrazil prohlížeč.
     </p>
 
     <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">
@@ -176,6 +192,8 @@ import Icon from '../../components/Icon.astro';
     color: var(--dimmer);
   }
   .readout dd { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  #q-notes { margin: 0; line-height: 1.5; }
+  #q-notes[hidden] { display: none; }
   .tool-actions {
     display: flex;
     flex-wrap: wrap;
@@ -192,70 +210,140 @@ import Icon from '../../components/Icon.astro';
 </style>
 
 <script>
-  import { meshFrom, writeMesh, stats, scaleMesh, outputName } from '../../lib/mesh.mjs';
+  import {
+    meshFrom, writeMesh, stats, scaleMesh, outputName, MAX_FILE_BYTES, tooLarge,
+  } from '../../lib/mesh.mjs';
+  import { pathsFrom, writePaths, pathStats } from '../../lib/paths2d.mjs';
 
   const $ = (id) => document.getElementById(id);
-  const state = { name: null, tris: null };
+  const state = { name: null, kind: null, tris: null, contours: null };
+
+  const TARGETS = {
+    mesh: [
+      ['stl', 'STL — binární, pro slicer a CAM'],
+      ['obj', 'OBJ — textový, pro CAD a vizualizaci'],
+      ['ply', 'PLY — textový, pro skenovací software'],
+      ['glb', 'GLB — pro web a 3D prohlížeče'],
+    ],
+    paths: [
+      ['dxf', 'DXF — pro frézku a laser'],
+      ['svg', 'SVG — pro řezací a kreslicí programy'],
+    ],
+  };
 
   const number = (id, fallback) => {
     const value = parseFloat($(id).value);
     return Number.isFinite(value) && value > 0 ? value : fallback;
   };
 
-  function showStats(tris, format) {
-    const s = stats(tris);
-    $('r-format').textContent = format;
-    $('r-tris').textContent = s.triangles.toLocaleString('cs-CZ');
-    $('r-verts').textContent = s.vertices.toLocaleString('cs-CZ');
-    $('r-size').textContent = s.size.map((v) => v.toFixed(2)).join(' × ');
-    const cm3 = s.volume / 1000;
-    $('r-volume').textContent = s.volume >= 1000
-      ? `${cm3.toFixed(2)} cm³`
-      : `${s.volume.toFixed(2)} mm³`;
-    $('f-readout').hidden = false;
-    $('f-drop-hint').hidden = true;
+  function setTargets(kind) {
+    const select = $('f-target');
+    select.replaceChildren(...TARGETS[kind].map(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      return option;
+    }));
   }
 
-  function reset(forget = true) {
-    if (forget) {
-      state.name = null;
-      state.tris = null;
-    }
+  function reset() {
+    state.name = null;
+    state.kind = null;
+    state.tris = null;
+    state.contours = null;
     $('b-download').disabled = true;
-    $('f-readout').hidden = true;
+    $('m-readout').hidden = true;
+    $('p-readout').hidden = true;
+    $('q-notes').hidden = true;
     $('f-drop-hint').hidden = false;
     $('f-state').textContent = 'zatím žádný soubor';
     $('f-out').textContent = 'vyber soubor';
   }
 
-  async function load(file) {
-    $('f-error').textContent = '';
-    $('f-state').textContent = `čtu ${file.name}…`;
-    try {
-      const bytes = new Uint8Array(await file.arrayBuffer());
-      const { tris, format } = meshFrom(file.name, bytes);
-      state.name = file.name;
-      state.tris = tris;
-      showStats(tris, format);
-      $('b-download').disabled = false;
-      $('f-state').textContent = `${file.name} — ${(file.size / 1024).toFixed(0)} kB`;
-      suggestTarget(format);
-      updateOutput();
-    } catch (error) {
-      reset();
-      $('f-state').textContent = file.name;
-      $('f-error').textContent = error.message;
-    }
+  function showMesh(tris, format) {
+    const s = stats(tris);
+    $('r-format').textContent = format;
+    $('r-tris').textContent = s.triangles.toLocaleString('cs-CZ');
+    $('r-verts').textContent = s.vertices.toLocaleString('cs-CZ');
+    $('r-size').textContent = s.size.map((v) => v.toFixed(2)).join(' × ');
+    $('r-volume').textContent = s.volume >= 1000
+      ? `${(s.volume / 1000).toFixed(2)} cm³`
+      : `${s.volume.toFixed(2)} mm³`;
+    $('m-readout').hidden = false;
   }
 
-  function suggestTarget(format) {
-    const order = { 'stl-binary': 'obj', 'stl-ascii': 'obj', obj: 'stl', ply: 'stl', glb: 'stl' };
-    $('f-target').value = order[format] ?? 'stl';
+  function showPaths(contours, format, notes) {
+    const s = pathStats(contours);
+    $('q-format').textContent = format;
+    $('q-contours').textContent = s.contours.toLocaleString('cs-CZ');
+    $('q-closed').textContent = s.closed.toLocaleString('cs-CZ');
+    $('q-points').textContent = s.points.toLocaleString('cs-CZ');
+    $('q-size').textContent = `${s.size[0].toFixed(2)} × ${s.size[1].toFixed(2)} mm`;
+    $('q-notes').hidden = !notes.length;
+    $('q-notes').textContent = notes.join(' · ');
+    $('p-readout').hidden = false;
+  }
+
+  function suggestTarget(kind, format) {
+    if (kind === 'mesh') {
+      const order = { 'stl-binary': 'obj', 'stl-ascii': 'obj', obj: 'stl', ply: 'stl', glb: 'stl' };
+      $('f-target').value = order[format] ?? 'stl';
+    } else {
+      $('f-target').value = format === 'svg' ? 'dxf' : 'svg';
+    }
   }
 
   function updateOutput() {
     if (!state.name) return;
     $('f-out').textContent = `→ ${outputName(state.name, $('f-target').value)}`;
+  }
+
+  async function load(file) {
+    $('f-error').textContent = '';
+    reset();
+    state.name = file.name;
+
+    // Refuse before reading: a 500 MB file would be in memory twice before any parser
+    // could decide it is too big, which is exactly how a tab freezes.
+    if (file.size > MAX_FILE_BYTES) {
+      state.name = null;
+      $('f-state').textContent = file.name;
+      $('f-error').textContent = tooLarge(file.size);
+      return;
+    }
+
+    $('f-state').textContent = `čtu ${file.name}…`;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const is2d = /\.(svg|dxf)$/i.test(file.name);
+
+      if (is2d) {
+        const { format, contours, notes } = pathsFrom(file.name, bytes);
+        state.kind = 'paths';
+        state.contours = contours;
+        setTargets('paths');
+        showPaths(contours, format, notes);
+        suggestTarget('paths', format);
+      } else {
+        const { tris, format } = meshFrom(file.name, bytes);
+        state.kind = 'mesh';
+        state.tris = tris;
+        setTargets('mesh');
+        showMesh(tris, format);
+        suggestTarget('mesh', format);
+      }
+
+      $('b-download').disabled = false;
+      $('f-state').textContent = `${file.name} — ${(file.size / 1024).toFixed(0)} kB`;
+      $('f-drop-hint').hidden = true;
+      updateOutput();
+    } catch (error) {
+      const name = file.name;
+      reset();
+      state.name = name;
+      $('f-state').textContent = name;
+      $('f-error').textContent = error.message;
+    }
   }
 
   $('f-file').addEventListener('change', (event) => {
@@ -266,11 +354,13 @@ import Icon from '../../components/Icon.astro';
   $('f-target').addEventListener('change', updateOutput);
 
   $('b-download').addEventListener('click', () => {
-    if (!state.tris) return;
     try {
       const target = $('f-target').value;
-      const scaled = scaleMesh(state.tris, number('f-scale', 1));
-      const { bytes, mime } = writeMesh(scaled, target);
+      const factor = number('f-scale', 1);
+      const { bytes, mime } = state.kind === 'paths'
+        ? writePaths(state.contours, target)
+        : writeMesh(scaleMesh(state.tris, factor), target);
+
       const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
       const link = document.createElement('a');
       link.href = url;

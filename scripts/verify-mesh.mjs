@@ -128,6 +128,53 @@ message = '';
 try { meshFrom('empty.stl', new Uint8Array(84)); } catch (error) { message = error.message; }
 check('truncated STL is refused, not guessed at', message.length > 0, message);
 
+// PLY must be read by property name and type, not by position: scanners write normals and
+// colour before x/y/z, and some emit doubles.
+function plyBinaryWithLeadingColour() {
+  const header = [
+    'ply', 'format binary_little_endian 1.0',
+    'element vertex 3',
+    'property uchar red', 'property double x', 'property double y', 'property double z',
+    'element face 1',
+    'property list uchar int vertex_indices',
+    'end_header', '',
+  ].join('\n');
+  const head = new TextEncoder().encode(header);
+  const body = new DataView(new ArrayBuffer(3 * 25 + 13));
+  let at = 0;
+  const vertices = [[0, 0, 0], [10, 0, 0], [0, 10, 0]];
+  for (const [x, y, z] of vertices) {
+    body.setUint8(at, 200); at += 1;
+    body.setFloat64(at, x, true); at += 8;
+    body.setFloat64(at, y, true); at += 8;
+    body.setFloat64(at, z, true); at += 8;
+  }
+  body.setUint8(at, 3); at += 1;
+  for (const index of [0, 1, 2]) { body.setInt32(at, index, true); at += 4; }
+  const out = new Uint8Array(head.length + at);
+  out.set(head); out.set(new Uint8Array(body.buffer, 0, at), head.length);
+  return out;
+}
+const named = stats(meshFrom('named.ply', plyBinaryWithLeadingColour()).tris);
+check('PLY reads x/y/z by name, not position', close(named.min[0], 0, 1e-9) && close(named.max[0], 10, 1e-9) && close(named.max[1], 10, 1e-9), `${named.size.map((v) => v.toFixed(1)).join(' × ')}`);
+check('PLY reads double coordinates', close(named.triangles, 1), `${named.triangles} tri`);
+
+let plyMessage = '';
+try {
+  meshFrom('bad.ply', new TextEncoder().encode('ply\nformat ascii 1.0\nelement vertex 3\nproperty long x\nproperty long y\nproperty long z\nelement face 1\nproperty list uchar int vertex_indices\nend_header\n0 0 0\n1 0 0\n0 1 0\n3 0 1 2\n'));
+} catch (error) { plyMessage = error.message; }
+check('PLY refuses a type it cannot read', /typ/.test(plyMessage), plyMessage);
+
+plyMessage = '';
+try {
+  meshFrom('missing.ply', new TextEncoder().encode('ply\nformat ascii 1.0\nelement vertex 1\nproperty float x\nproperty float y\nelement face 0\nproperty list uchar int vertex_indices\nend_header\n0 0\n'));
+} catch (error) { plyMessage = error.message; }
+check('PLY refuses a missing coordinate', /z/.test(plyMessage), plyMessage);
+
+let bigMessage = '';
+try { meshFrom('huge.stl', new Uint8Array(41 * 1024 * 1024)); } catch (error) { bigMessage = error.message; }
+check('oversized model is refused before parsing', /MB/.test(bigMessage), bigMessage.slice(0, 55));
+
 check('output name strips diacritics and spaces', outputName('Příruba 2.stl', 'obj') === 'priruba-2.obj', outputName('Příruba 2.stl', 'obj'));
 
 console.log(failures ? `\n${failures} CHECK(S) FAILED` : '\nALL CHECKS PASSED');

@@ -7,6 +7,19 @@
 
 const cube = (bytes) => new Uint8Array(bytes);
 
+// A model large enough to freeze the tab is refused, with a message, before it is parsed.
+export const MAX_FILE_BYTES = 40 * 1024 * 1024;
+export const MAX_TRIANGLES = 1_500_000;
+
+export function tooLarge(bytes) {
+  return `Soubor má ${(bytes / 1048576).toFixed(1)} MB. Tenhle nástroj zvládne ${MAX_FILE_BYTES / 1048576} MB — `
+    + 'větší model otevři v sliceru na počítači, tady by zamrazil prohlížeč.';
+}
+
+function guardSize(bytes) {
+  if (bytes.byteLength > MAX_FILE_BYTES) throw new Error(tooLarge(bytes.byteLength));
+}
+
 // --- reading -----------------------------------------------------------------
 
 function readStlBinary(bytes) {
@@ -61,14 +74,35 @@ function readObj(text) {
   return new Float32Array(out);
 }
 
-function readPly(bytes) {
-  // The header is ASCII even in binary PLY, so read lines until `end_header`.
-  const probe = new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, 4096)));
-  const end = probe.indexOf('end_header');
-  if (end < 0) throw new Error('PLY nemá hlavičku end_header');
+// PLY's spec fixes these names; anything else is refused rather than guessed at, because
+// a wrong guess reads plausible-looking garbage and produces a silently broken model.
+const PLY_TYPES = {
+  char: ['getInt8', 1], int8: ['getInt8', 1],
+  uchar: ['getUint8', 1], uint8: ['getUint8', 1],
+  short: ['getInt16', 2], int16: ['getInt16', 2],
+  ushort: ['getUint16', 2], uint16: ['getUint16', 2],
+  int: ['getInt32', 4], int32: ['getInt32', 4],
+  uint: ['getUint32', 4], uint32: ['getUint32', 4],
+  float: ['getFloat32', 4], float32: ['getFloat32', 4],
+  double: ['getFloat64', 8], float64: ['getFloat64', 8],
+};
 
-  const headerText = probe.slice(0, end);
-  const lines = headerText.split(/\r?\n/).map((line) => line.trim());
+function plyType(type, where) {
+  const entry = PLY_TYPES[type];
+  if (!entry) throw new Error(`PLY používá typ „${type}“ (${where}), který neumím přečíst`);
+  return entry;
+}
+
+const INDEX_NAMES = new Set(['vertex_indices', 'vertex_index']);
+
+function readPly(bytes) {
+  // The header is ASCII even in a binary PLY, so read forward until `end_header`.
+  const probe = new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, 8192)));
+  const headerEnd = probe.indexOf('end_header');
+  if (headerEnd < 0) throw new Error('PLY nemá hlavičku end_header');
+  const bodyStart = headerEnd + 'end_header'.length;
+
+  const lines = probe.slice(0, headerEnd).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   const format = lines.find((line) => line.startsWith('format '))?.split(/\s+/)[1];
   if (format !== 'ascii' && format !== 'binary_little_endian') {
     throw new Error(`PLY ${format ?? 'bez formátu'} neumím — jen ascii a binary_little_endian`);
@@ -77,82 +111,136 @@ function readPly(bytes) {
   const elements = [];
   for (const line of lines) {
     const parts = line.split(/\s+/);
-    if (parts[0] === 'element') elements.push({ name: parts[1], count: +parts[2], props: [] });
+    if (parts[0] === 'element') elements.push({ name: parts[1], count: Number(parts[2]), props: [] });
     else if (parts[0] === 'property' && elements.length) {
       const current = elements.at(-1);
-      current.props.push(parts[1] === 'list'
-        ? { list: true, countType: parts[2], type: parts[3], name: parts[4] }
-        : { list: false, type: parts[1], name: parts[2] });
+      if (parts[1] === 'list') current.props.push({ list: true, countType: parts[2], type: parts[3], name: parts[4] });
+      else current.props.push({ list: false, type: parts[1], name: parts[2] });
     }
   }
 
-  const vertexElement = elements.find((element) => element.name === 'vertex');
-  const faceElement = elements.find((element) => element.name === 'face');
-  if (!vertexElement || !faceElement) throw new Error('PLY nemá elementy vertex a face');
+  const vertex = elements.find((element) => element.name === 'vertex');
+  const face = elements.find((element) => element.name === 'face');
+  if (!vertex) throw new Error('PLY nemá element vertex');
+  if (!face) throw new Error('PLY nemá element face');
+  if (vertex.props.some((property) => property.list)) {
+    throw new Error('PLY má u vrcholů seznam (list) — to neumím');
+  }
 
-  const positions = new Float64Array(vertexElement.count * 3);
+  // Read by name, never by position: scanners habitually put normals or colour before
+  // x/y/z, and some write the coordinates as double.
+  const axisColumns = ['x', 'y', 'z'].map((axis) => {
+    const property = vertex.props.find((entry) => entry.name === axis);
+    if (!property) throw new Error(`PLY nemá u vrcholů property ${axis}`);
+    const [getter, size] = plyType(property.type, `vertex ${axis}`);
+    return { axis, getter, size };
+  });
+  const listProperty = face.props.find((property) => property.list && INDEX_NAMES.has(property.name))
+    ?? face.props.find((property) => property.list);
+  if (!listProperty) throw new Error('PLY nemá u ploch seznam s indexy vrcholů');
+
+  const positions = new Float64Array(vertex.count * 3);
   const faces = [];
 
   if (format === 'ascii') {
-    const body = new TextDecoder().decode(bytes.subarray(end + 'end_header'.length)).trim().split(/\r?\n/);
-    let row = 0;
-    for (let i = 0; i < vertexElement.count; i += 1) {
-      const values = body[row++].trim().split(/\s+/).map(Number);
-      const at = vertexElement.props.findIndex((p) => p.name === 'x');
-      positions[i * 3] = values[at];
-      positions[i * 3 + 1] = values[at + 1];
-      positions[i * 3 + 2] = values[at + 2];
+    // Validate every declared type even in ASCII, so an unsupported file fails the same way.
+    for (const property of vertex.props) plyType(property.type, `vertex ${property.name}`);
+    for (const property of face.props) {
+      if (property.list) plyType(property.type, `face ${property.name}`);
+      else plyType(property.type, `face ${property.name}`);
     }
-    for (let i = 0; i < faceElement.count; i += 1) {
-      const values = body[row++].trim().split(/\s+/).map(Number);
-      faces.push(values.slice(1, 1 + values[0]));
+
+    const rows = new TextDecoder().decode(bytes.subarray(bodyStart)).trim().split(/\r?\n/);
+    const order = vertex.props.map((property) => property.name);
+    const indexOf = (axis) => order.indexOf(axis);
+    let row = 0;
+
+    for (let i = 0; i < vertex.count; i += 1) {
+      const values = rows[row++].trim().split(/\s+/);
+      for (const axis of ['x', 'y', 'z']) {
+        const value = Number(values[indexOf(axis)]);
+        if (!Number.isFinite(value)) throw new Error(`PLY má nečíselnou souřadnici ${axis} na řádku ${row}`);
+        positions[i * 3 + 'xyz'.indexOf(axis)] = value;
+      }
+    }
+
+    for (let i = 0; i < face.count; i += 1) {
+      const values = rows[row++].trim().split(/\s+/);
+      let cursor = 0;
+      let corners = null;
+      for (const property of face.props) {
+        if (property.list) {
+          const count = Number(values[cursor++]);
+          const indices = [];
+          for (let c = 0; c < count; c += 1) indices.push(Number(values[cursor++]));
+          if (property === listProperty) corners = indices;
+        } else {
+          cursor += 1;
+        }
+      }
+      if (!corners) throw new Error('PLY má plochu bez indexů');
+      faces.push(corners);
     }
   } else {
     const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-    const sizes = { char: 1, int8: 1, uchar: 1, uint8: 1, short: 2, int16: 2, ushort: 2, uint16: 2, int: 4, int32: 4, uint: 4, uint32: 4, float: 4, float32: 4, double: 8, float64: 8 };
-    const read = (type, at) => (type === 'float' || type === 'float32' ? view.getFloat32(at, true)
-      : type === 'double' || type === 'float64' ? view.getFloat64(at, true)
-        : sizes[type] === 1 ? (type.startsWith('u') ? view.getUint8(at) : view.getInt8(at))
-          : sizes[type] === 2 ? (type.startsWith('u') ? view.getUint16(at, true) : view.getInt16(at, true))
-            : (type.startsWith('u') ? view.getUint32(at, true) : view.getInt32(at, true)));
+    let at = bodyStart;
+    while (bytes[at] === 10 || bytes[at] === 13 || bytes[at] === 32) at += 1;
 
-    let offset = end + 'end_header'.length;
-    while (bytes[offset] === 13 || bytes[offset] === 10 || bytes[offset] === 32) offset += 1;
-
-    const vertexStride = vertexElement.props.reduce((total, p) => total + sizes[p.type], 0);
-    const xAt = vertexElement.props.slice(0, vertexElement.props.findIndex((p) => p.name === 'x')).reduce((t, p) => t + sizes[p.type], 0);
-    for (let i = 0; i < vertexElement.count; i += 1) {
-      const at = offset + i * vertexStride + xAt;
-      positions[i * 3] = read('float32', at);
-      positions[i * 3 + 1] = read('float32', at + 4);
-      positions[i * 3 + 2] = read('float32', at + 8);
+    const columns = [];
+    let stride = 0;
+    for (const property of vertex.props) {
+      const [getter, size] = plyType(property.type, `vertex ${property.name}`);
+      columns.push({ name: property.name, getter, offset: stride });
+      stride += size;
     }
-    offset += vertexElement.count * vertexStride;
+    for (const column of axisColumns) {
+      const match = columns.find((entry) => entry.name === column.axis);
+      column.getter = match.getter;
+      column.offset = match.offset;
+    }
 
-    const faceProps = faceElement.props;
-    for (let i = 0; i < faceElement.count; i += 1) {
-      let at = offset;
+    for (let i = 0; i < vertex.count; i += 1) {
+      const base = at + i * stride;
+      for (let axis = 0; axis < 3; axis += 1) {
+        positions[i * 3 + axis] = view[axisColumns[axis].getter](base + axisColumns[axis].offset, true);
+      }
+    }
+    at += vertex.count * stride;
+
+    const [countGetter, countSize] = plyType(listProperty.countType, 'face count');
+    const [valueGetter, valueSize] = plyType(listProperty.type, 'face index');
+
+    for (let i = 0; i < face.count; i += 1) {
+      let cursorAt = at;
       let corners = null;
-      for (const property of faceProps) {
+      for (const property of face.props) {
         if (property.list) {
-          const count = read(property.countType, at);
-          at += sizes[property.countType];
-          corners = [];
+          const count = view[property === listProperty ? countGetter : plyType(property.countType, 'list count')[0]](cursorAt, true);
+          cursorAt += property === listProperty ? countSize : plyType(property.countType, 'list count')[1];
+          const indices = [];
           for (let c = 0; c < count; c += 1) {
-            corners.push(read(property.type, at));
-            at += sizes[property.type];
+            const getter = property === listProperty ? valueGetter : plyType(property.type, 'list value')[0];
+            indices.push(view[getter](cursorAt, true));
+            cursorAt += property === listProperty ? valueSize : plyType(property.type, 'list value')[1];
           }
+          if (property === listProperty) corners = indices;
         } else {
-          at += sizes[property.type];
+          cursorAt += plyType(property.type, `face ${property.name}`)[1];
         }
       }
-      if (corners) faces.push(corners);
-      offset = at;
+      if (!corners) throw new Error('PLY má plochu bez indexů');
+      faces.push(corners);
+      at = cursorAt;
     }
   }
 
   const out = [];
   for (const corners of faces) {
+    for (const corner of corners) {
+      if (!(corner >= 0 && corner < vertex.count)) {
+        throw new Error(`PLY odkazuje na vrchol ${corner}, ale soubor jich má ${vertex.count}`);
+      }
+    }
     for (let i = 1; i + 1 < corners.length; i += 1) {
       for (const corner of [corners[0], corners[i], corners[i + 1]]) {
         out.push(positions[corner * 3], positions[corner * 3 + 1], positions[corner * 3 + 2]);
@@ -399,6 +487,7 @@ export function detectFormat(name) {
 
 export function meshFrom(name, bytes) {
   const format = detectFormat(name);
+  guardSize(bytes);
   const looksText = () => new TextDecoder('utf-8').decode(bytes.subarray(0, Math.min(bytes.length, 2048)));
 
   if (format === 'stl') {
@@ -410,7 +499,7 @@ export function meshFrom(name, bytes) {
       tris: ascii ? readStlAscii(new TextDecoder().decode(bytes)) : readStlBinary(bytes),
     };
   }
-  if (format === 'obj') return { format: 'obj', tris: readObj(new TextDecoder().decode(bytes)) };
+  if (format === 'obj') return { format: 'obj', tris: checkCount(readObj(new TextDecoder().decode(bytes))) };
   if (format === 'ply') return { format: 'ply', tris: readPly(bytes) };
   return { format: 'glb', tris: readGlb(bytes) };
 }
@@ -464,4 +553,12 @@ export function outputName(name, format) {
     .replace(/^-+|-+$/g, '')
     .toLowerCase() || 'soubor';
   return `${safe}.${format}`;
+}
+
+// Parse-time triangle guard: well under the freeze point, well above a real workshop part.
+function checkCount(tris) {
+  if (tris.length / 9 > MAX_TRIANGLES) {
+    throw new Error(`Model má ${(tris.length / 9).toLocaleString('cs-CZ')} trojúhelníků, limit je ${MAX_TRIANGLES.toLocaleString('cs-CZ')}.`);
+  }
+  return tris;
 }

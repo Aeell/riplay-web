@@ -11,7 +11,8 @@
     "fonts:catalog": "node scripts/build-font-catalog.mjs",
     "preview:full": "node scripts/serve-local.mjs",
     "verify:mesh": "node scripts/verify-mesh.mjs",
-    "verify:font": "node scripts/verify-font2dxf.mjs"
+    "verify:font": "node scripts/verify-font2dxf.mjs",
+    "verify:paths": "node scripts/verify-paths2d.mjs"
   },
   "dependencies": {
     "astro": "^5.0.0",

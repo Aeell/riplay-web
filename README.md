@@ -40,9 +40,11 @@ src/styles/          the design language (graphite, hairline grid, one accent)
 src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
 src/pages/           home, /archiv (the old site), /nastroje + /nastroje/prevod (tools)
-src/lib/             font-geometry.mjs (text → SVG/DXF), mesh.mjs (STL/OBJ/PLY/GLB)
+src/lib/             font-geometry.mjs (text → SVG/DXF), mesh.mjs (STL/OBJ/PLY/GLB),
+                     paths2d.mjs (SVG ↔ DXF, mm, open/closed contours)
 netlify/functions/   font.mjs — /api/font, the only server-side code (Google Fonts → TTF)
-scripts/             verify-font2dxf.mjs, verify-mesh.mjs, build-font-catalog.mjs
+scripts/             verify-font2dxf.mjs, verify-mesh.mjs, verify-paths2d.mjs,
+                     build-font-catalog.mjs, serve-local.mjs
 ```
 
 ## Adding a part (from D2)

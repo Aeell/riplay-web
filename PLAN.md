@@ -175,15 +175,26 @@ first ("this STL is wrong for my CAM"), a customer second ("open this file someo
 `src/lib/mesh.mjs`. That keeps the page at 11 KB of HTML with a small script and nothing
 to licence.
 
-Still to come in T2 (not started, no pretend coverage): **PDF, DXF and SVG as 2D paths** —
-those need real path parsing and, for PDF, a raster step that this site would have to be
-honest about.
+**2D slice shipped too:** SVG ↔ DXF in millimetres (`src/lib/paths2d.mjs`). SVG paths are
+parsed properly — all commands, curves flattened to 0.02 mm, arcs, group and element
+transforms, `width`/`viewBox` converted to millimetres, `rect`/`circle`/`ellipse`/`line`/
+`polygon`/`polyline`. DXF reads LINE, LWPOLYLINE, POLYLINE, VERTEX with bulges, ARC and
+CIRCLE, honours `$INSUNITS`, and keeps open paths open on export. Still not done: **PDF** —
+it is a page, not a path, and a raster trace would be a different claim.
+
+Big files are refused at the door: over 40 MB the tool says so instead of freezing the tab,
+before the bytes are even read. PLY is read by property **name and type** from the header
+(scanners put normals or colour first, some write doubles), and a type the reader does not
+know is refused with its name rather than silently misread.
 
 **Done:** measured, not eyeballed — `scripts/verify-mesh.mjs` sends a known 10 mm cube
 through all four writers and readers and requires 12 triangles, 1000 mm³ and a 10 × 10 × 10
 box back; also proves ASCII-STL detection, OBJ quad fan-triangulation, OBJ negative indices,
-binary PLY, GLB node transforms, scale (×2 → 8000 mm³) and that broken files are refused
-with a message instead of guessed at.
+binary PLY read by name with double coordinates, GLB node transforms, scale (×2 → 8000 mm³),
+unknown PLY types refused, oversized files refused, and broken files refused with a message
+instead of guessed at. `scripts/verify-paths2d.mjs` does the same for 2D: viewBox → mm,
+group transforms, curve tolerance against the real curve, arcs, DXF bulges, and open paths
+staying open through a DXF round trip.
 
 ### T3 — The other three, judged by the rule
 Image compressor, PDF toolkit, QR studio: each either earns a page under the audience rule
