@@ -98,11 +98,14 @@ cancelling); optionally drop the duplicate SPF `TXT`.
 - **Machine direction (owner, 2026-11-12, open — "we'll see"):** take the platform a notch
   further into a **swappable-head machine** — CNC head / print head in an **enclosed
   envelope** with controllable, fast-changing temperature. Implications for the solution:
-  head swap as LinuxCNC M6 with per-head tool offsets, extruder as a stepgen E axis so
-  **one post-processor dialect serves both heads**, chamber temperature as another process
-  loop, and the schedule gaining head + chamber-setpoint fields. Unverified bench item:
-  Flexi-HAL analog I/O for thermistor/heater (RS485 is on the board — a companion MCU is
-  the fallback).
+  head swap as LinuxCNC M6 with per-head tool offsets, extruder as a **U axis letter**
+  (LinuxCNC has no E; axes are XYZABC UVW) so **one post-processor dialect serves both
+  heads**, chamber temperature as another process loop, and the schedule gaining head +
+  chamber-setpoint fields. Unverified bench item: Flexi-HAL analog I/O for thermistor/
+  heater (RS485 is on the board — a companion MCU is the fallback). **LinuxCNC post is
+  done in the fork** (`~/Projects/riplay-slicer`, commit `574d065`): box gcode comes out
+  in LinuxCNC dialect, extrusion on U; the D16 done test still needs a real print on the
+  machine plus the user-defined M-code files (M104/M109/M140/M190) in PROGRAM_PREFIX.
 - **"Slicer" is the public word; the product is a 5-axis 3D printing solution (2026-11-12).**
   The site already says "Slicer, který neexistuje" and lists `5osý slicer · prototyp` — the
   term stays because it is what the maker audience searches for. What gets built is defined

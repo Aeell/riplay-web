@@ -227,10 +227,13 @@ see `docs/research-slicer-fork.md` §2 and concept §3.
 
 ### D16 — Slicer spine
 Mesh import + 2.5D slicing to a toolpath, CLI, tests on a known model. The spine is a
-**headless driver over the forked engine**, not a slicer rewrite: `cli.py` already
-slices a box headless (2026-11-12, `~/Projects/riplay-slicer`, branch `riplay-spine`);
-remaining work is the post-processor (fork targets Fractal's Klipper dialect,
-`home_ab`) and the test suite.
+**headless driver over the forked engine**, not a slicer rewrite: `cli.py` slices a box
+headless and the **LinuxCNC post is done** (2026-11-12, `post_linuxcnc.py`: header/footer
+rewritten for LinuxCNC, extrusion mapped to the U axis letter — LinuxCNC has no E —
+temps as user-defined M-code executables, no G28/homing in-program, ends with M2;
+engine output untouched, regression-checked). Remaining for the done test: the gcode
+printed on a real machine (bench: user-defined M-code files + U-joint config), and the
+test suite on a known model.
 **Done:** `riplay-slicer slice model.stl` produces gcode for a real print.
 
 ### D17 — Viewer

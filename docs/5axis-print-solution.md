@@ -65,9 +65,11 @@ machinery, not new invention:
 - head swap = **M6 with halt**; each head carries its own tool offset (spindle gauge
   length vs nozzle offset); re-verify after swap with the probe/toolsetter input the
   board already has;
-- extruder = **a stepgen E axis** — retraction and flow become ordinary G1 moves, so a
-  **single post-processor dialect serves both heads**; the planner's schedule gains two
-  fields (head, chamber setpoints);
+- extruder = **a linear axis letter** — LinuxCNC has no E letter (axes are XYZABC UVW),
+  so the post maps extrusion to **U** (machine config maps that joint to the extruder
+  stepper); retraction and flow become ordinary G1 moves, so a **single post-processor
+  dialect serves both heads**; the planner's schedule gains two fields (head, chamber
+  setpoints);
 - the enclosure = **chamber temperature as another process loop** (heater PWM, fan
   ventilation for fast cooldown); the bead table gains a chamber column later;
 - open bench item: Flexi-HAL analog I/O for thermistor/heater is unverified (RS485 is
