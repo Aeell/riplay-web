@@ -48,7 +48,7 @@ export const shop = {
 
   bench: [
     { n: '5osá frézka', s: 'retrofit', state: 'rozestavěno', tone: 'warn' },
-    { n: 'Pi 5 + FlexiHAL', s: 'řízení', state: 'běží', tone: 'ok' },
+    { n: 'LinuxCNC (Pi 5 + FlexiHAL)', s: 'řízení', state: 'běží', tone: 'ok' },
     { n: '5osý slicer', s: 'open source', state: 'prototyp', tone: 'warn' },
     { n: 'dílna', s: 'kapacita', state: 'volná', tone: 'ok' },
   ],

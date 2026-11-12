@@ -210,8 +210,9 @@ only after it has been brought over.
 ## Phase 2 — The Build (D13–D22)
 
 ### D13 — `/stroj` **[SHIP]**
-The machine as a page: Pi 5, FlexiHAL, RichAuto DSP11 router, what is stock, what is
-retrofitted, what is broken. Config table is data, not prose.
+The machine as a page: **Wattsan 0404-mini, 2.2 kW spindle; stock RichAuto A11E DSP
+removed — LinuxCNC on Pi 5 + Flexi-HAL runs it** (owner facts, 2026-11-12), what is
+stock, what is retrofitted, what is broken. Config table is data, not prose.
 **Done:** page published; every claim traceable to a photo or a log.
 
 ### D14 — Episode 0 **[SHIP]**

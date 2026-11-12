@@ -17,6 +17,12 @@ proven on the bench router). The controller never parses schedules or knows abou
 "slicing"; the gcode + M-codes are the entire interface between planner and machine.
 Intelligence stays in `riplay-slicer` (planner, post, schedule) — the machine executes.
 
+**The machine (owner facts, 2026-11-12):** Wattsan 0404-mini router, 2.2 kW spindle.
+The stock RichAuto A11E DSP controller is removed — **LinuxCNC runs the machine through
+the Pi 5 + Flexi-HAL today.** This router is the base the 4th/5th-axis retrofit and the
+swappable print head grow from. Working envelope and achieved tolerance remain unknown
+(`doplní se` on the site until measured).
+
 ## 2. What LinuxCNC already provides (verified facts, not wishes)
 
 | Mechanism | Fact | Role here |

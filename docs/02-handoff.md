@@ -218,7 +218,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
 5. [ ] Real facts still needed from the owner: machine envelope and real tolerance, actual
-       part photos, price bands, `IČO`. **`IČO` is blocked on the Czech trade licence**
+       part photos, price bands, `IČO`. **Machine identity is on record (2026-11-12):
+       Wattsan 0404-mini, 2.2 kW spindle, stock RichAuto A11E DSP removed, LinuxCNC on
+       Pi 5 + Flexi-HAL runs it** — envelope/tolerance stay `doplní se` until measured.
+       **`IČO` is blocked on the Czech trade licence**
        (`PLAN.md` D11) — do not fill it in speculatively; the footer renders
        `IČO doplní se` on purpose.
 6. [x] Old site archived at `/archiv` (§4): repo kept public, page records what
