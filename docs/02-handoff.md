@@ -115,7 +115,9 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   The full architecture/position paper is `docs/5axis-print-solution.md` — the planar
   trick, why the 2D path forces an autonomy chase, the control-loop architecture on the
   shop's verified Pi 5 + Flexi-HAL + Remora/LinuxCNC RT stack, and the Czech draft for
-  the EP 01 episode (D14).
+  the EP 01 episode (D14). **The machine-side integration spec is
+  `docs/machine-integration.md`** (`riplay-machine`: switchable kinematics as the
+  CNC↔5-axis seam, M100–M199 process layer, sim-first development order).
 
 ---
 
