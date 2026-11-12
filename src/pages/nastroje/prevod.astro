@@ -159,6 +159,8 @@ import Icon from '../../components/Icon.astro';
   #f-error { color: var(--warn); min-height: 1em; margin: 0; }
   #f-state { margin: 0; }
   .readout { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--line-soft); }
+  /* `display: grid` beats the hidden attribute, so say it explicitly. */
+  .readout[hidden] { display: none; }
   .readout > div {
     display: grid;
     grid-template-columns: 8.5rem 1fr;
