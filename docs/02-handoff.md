@@ -92,6 +92,17 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   `Aeell` and link it — not a collaborator invite, and not a deploy token in CI.
   `Stanwesly/riplay-web` survives as a stale mirror; do not push to it.
 
+- **The RT control stack is proven in operation (owner, 2026-11-12):** a small CNC router
+  is already controlled by Pi 5 + Flexi-HAL on the Remora Pi software. Not a paper stack —
+  the shop's bench reality.
+- **Machine direction (owner, 2026-11-12, open — "we'll see"):** take the platform a notch
+  further into a **swappable-head machine** — CNC head / print head in an **enclosed
+  envelope** with controllable, fast-changing temperature. Implications for the solution:
+  head swap as LinuxCNC M6 with per-head tool offsets, extruder as a stepgen E axis so
+  **one post-processor dialect serves both heads**, chamber temperature as another process
+  loop, and the schedule gaining head + chamber-setpoint fields. Unverified bench item:
+  Flexi-HAL analog I/O for thermistor/heater (RS485 is on the board — a companion MCU is
+  the fallback).
 - **"Slicer" is the public word; the product is a 5-axis 3D printing solution (2026-11-12).**
   The site already says "Slicer, který neexistuje" and lists `5osý slicer · prototyp` — the
   term stays because it is what the maker audience searches for. What gets built is defined

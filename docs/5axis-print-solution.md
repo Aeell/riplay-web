@@ -53,9 +53,27 @@ fixed servo rate):
   Technologies, STM32F446) running **Remora**, with the Pi mounted on its GPIO header.
 - The **Pi 5 runs LinuxCNC on an RT-patched kernel** — the Flexi-Pi image builds
   exactly that (bcm2712, ARM64; Pi 5 recommended by the Remora Flexi-HAL port).
-- This stack is not hypothetical: it is already the workshop's machine platform
-  (PLAN D13). The realtime layer the 5-axis printer needs is the realtime layer the
-  5-axis mill retrofit needs. One bench, one architecture.
+- This stack is proven in operation: the owner already controls a small CNC router with
+  Pi 5 + Flexi-HAL on the Remora Pi software (2026-11-12). The realtime layer the 5-axis
+  printer needs is the realtime layer the 5-axis mill needs. One bench, one architecture.
+
+**Machine direction (owner, 2026-11-12 — open):** one step further — a **swappable-head
+machine**: CNC head and print head in one enclosed envelope where temperature is
+maintained and can be changed fast. On the control stack this is ordinary LinuxCNC
+machinery, not new invention:
+
+- head swap = **M6 with halt**; each head carries its own tool offset (spindle gauge
+  length vs nozzle offset); re-verify after swap with the probe/toolsetter input the
+  board already has;
+- extruder = **a stepgen E axis** — retraction and flow become ordinary G1 moves, so a
+  **single post-processor dialect serves both heads**; the planner's schedule gains two
+  fields (head, chamber setpoints);
+- the enclosure = **chamber temperature as another process loop** (heater PWM, fan
+  ventilation for fast cooldown); the bead table gains a chamber column later;
+- open bench item: Flexi-HAL analog I/O for thermistor/heater is unverified (RS485 is
+  on the board — a companion MCU over RS485 is the fallback);
+- honest design tension, owner's domain: chips and vibration from milling inside an
+  envelope that is also a heated, thermally controlled chamber.
 
 **Process loops — the rest of the tentacles** (slower loops supervising the fast one):
 
