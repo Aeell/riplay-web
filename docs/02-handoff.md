@@ -211,6 +211,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).
+10. [x] `docs/research-slicer-fork.md` (2026-11-12) — fork research for the future
+       `riplay-slicer` (PLAN D15–D18, D21): fork `Fractal-Cortex` (GPL-3.0 — closes the
+       concept §10 license question toward GPL-3.0). Research only, not started; D2 is
+       still the next content session.
 
 ---
 
