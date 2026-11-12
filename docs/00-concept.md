@@ -75,7 +75,8 @@ homepage. What gets built is **not a slicer in the Cura sense** — it is a **5-
 
 Explicitly **not** a planar-stack monolith (the Cura/Prusa/Orca lineage) and **not**
 autonomy research. Fork basis and reasoning: `docs/research-slicer-fork.md`
-(Fractal Cortex, GPL-3.0).
+(Fractal Cortex, GPL-3.0). Architecture and the "why no real 5-axis slicer" argument:
+`docs/5axis-print-solution.md`.
 
 ## 4. Three audiences, three paths
 

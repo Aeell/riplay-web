@@ -98,6 +98,10 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   in `docs/research-slicer-fork.md` (machine retrofit + human-in-the-loop CAM for
   deposition + tabulated bead model + Replay viewer) and summarised in concept §3
   ("The word slicer"). Explicitly not a planar-stack monolith, not autonomy research.
+  The full architecture/position paper is `docs/5axis-print-solution.md` — the planar
+  trick, why the 2D path forces an autonomy chase, the control-loop architecture on the
+  shop's verified Pi 5 + Flexi-HAL + Remora/LinuxCNC RT stack, and the Czech draft for
+  the EP 01 episode (D14).
 
 ---
 
