@@ -59,6 +59,33 @@ strategy with the owner's process knowledge, encoded as rules and calibration ta
 single-wall prints give bead width/height vs flow/speed/temperature. The bead is a tool
 whose diameter varies with feed — everything else is standard CAM arithmetic.
 
+### Naming and scope (owner decision, 2026-11-12)
+
+- **Public word stays "slicer"** — riplay.cz already taunts with "Slicer, který
+  neexistuje" and the workshop table lists `5osý slicer · open source · prototyp`. It is
+  the term the maker audience searches for and the r/CNC hook at D22.
+- **What is built is a 5-axis 3D printing solution**, not a slicer: machine retrofit +
+  human-in-the-loop CAM for deposition + tabulated bead model + Replay viewer. Written
+  into concept §3 ("The word slicer") so no future session drifts into the monolith.
+- README (D15) must carry that definition — name `riplay-slicer`, first paragraph states
+  the real scope, so the taunt never becomes an overclaim.
+
+### M0 progress (2026-11-12)
+
+- Fork cloned to `~/Projects/riplay-slicer` (upstream `fractalrobotics/Fractal-Cortex`,
+  local branch `riplay-spine`).
+- Headless driver `cli.py` written and working: a 40×40×20 box at 0.25 mm layers →
+  79 layers, ~6.5k G1 moves, seconds, no GUI. Engine deps only (numpy, trimesh, shapely,
+  scipy, networkx in `.venv`).
+- Engine/API facts: `slice_in_3_axes(printSettings, meshData)` →
+  `write_3_axis_gcode(outPath, outPath, printSettings, ...)`; `printSettings` is a
+  positional list indexed in `all_calculations` (temps, infill %, shell, layer height,
+  speeds, z-hop/retraction, supports, brim). GUI deps (pyglet/glooey) live only in
+  `slicer_main.py`; 5-axis entry points are `slice_in_5_axes(printSettings, meshData,
+  slicingDirections)` + `write_5_axis_gcode(...)`.
+- Not done yet: post-processor swap (fork emits Fractal's Klipper dialect with
+  `home_ab`), 5-axis path run, tests.
+
 ## 3. Candidates (verified via GitHub API, 2026-11-12)
 
 **Purpose-built 5-axis / non-planar, small enough to fork:**

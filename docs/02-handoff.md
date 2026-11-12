@@ -92,6 +92,13 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   `Aeell` and link it — not a collaborator invite, and not a deploy token in CI.
   `Stanwesly/riplay-web` survives as a stale mirror; do not push to it.
 
+- **"Slicer" is the public word; the product is a 5-axis 3D printing solution (2026-11-12).**
+  The site already says "Slicer, který neexistuje" and lists `5osý slicer · prototyp` — the
+  term stays because it is what the maker audience searches for. What gets built is defined
+  in `docs/research-slicer-fork.md` (machine retrofit + human-in-the-loop CAM for
+  deposition + tabulated bead model + Replay viewer) and summarised in concept §3
+  ("The word slicer"). Explicitly not a planar-stack monolith, not autonomy research.
+
 ---
 
 ## 4. The old site, and what is salvaged from it
@@ -213,8 +220,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).
 10. [x] `docs/research-slicer-fork.md` (2026-11-12) — fork research for the future
        `riplay-slicer` (PLAN D15–D18, D21): fork `Fractal-Cortex` (GPL-3.0 — closes the
-       concept §10 license question toward GPL-3.0). Research only, not started; D2 is
-       still the next content session.
+       concept §10 license question toward GPL-3.0). **M0 started the same day:** fork at
+       `~/Projects/riplay-slicer` (branch `riplay-spine`), headless `cli.py` slices a box
+       to gcode. Scope decision in handoff §3: "slicer" is the public word, the build is a
+       5-axis 3D printing solution. D2 is still the next content session.
 
 ---
 

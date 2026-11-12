@@ -220,11 +220,17 @@ retrofitted, what is broken. Config table is data, not prose.
 
 ### D15 — Slicer repo **[SHIP]**
 `riplay-slicer` public: README with an honest status line, license decision, short
-architecture note, CI running the test suite.
+architecture note, CI running the test suite. The repo **name** keeps the word "slicer"
+(search term, the taunt); the README **defines** it as a 5-axis 3D printing solution —
+see `docs/research-slicer-fork.md` §2 and concept §3.
 **Done:** repo public, CI green, README does not overclaim.
 
 ### D16 — Slicer spine
-Mesh import + 2.5D slicing to a toolpath, CLI, tests on a known model.
+Mesh import + 2.5D slicing to a toolpath, CLI, tests on a known model. The spine is a
+**headless driver over the forked engine**, not a slicer rewrite: `cli.py` already
+slices a box headless (2026-11-12, `~/Projects/riplay-slicer`, branch `riplay-spine`);
+remaining work is the post-processor (fork targets Fractal's Klipper dialect,
+`home_ab`) and the test suite.
 **Done:** `riplay-slicer slice model.stl` produces gcode for a real print.
 
 ### D17 — Viewer

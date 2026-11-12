@@ -58,6 +58,25 @@ The same component later renders slicer output: layers, perimeters, supports,
 are one codebase.** That is the convergence worth building around; it is why the
 slicer is not a distraction from the business but its content engine.
 
+### The word "slicer" (decided 2026-11-12)
+
+Publicly the word stays: "5osý slicer" is what the maker audience searches for, and
+the build journal's honest taunt ("Slicer, který neexistuje") is already live on the
+homepage. What gets built is **not a slicer in the Cura sense** — it is a **5-axis
+3D printing solution**, four parts:
+
+- the machine retrofit (4th/5th axis on the DSP11 router platform);
+- a human-in-the-loop process planner for deposition — the CAM loop a CNC specialist
+  already runs by hand: pick the setup and strategy, software checks overhang and
+  collision, computes paths, kinematics and gcode;
+- a tabulated bead model (width/height vs flow, speed, temperature) calibrated on the
+  bench — the deposition equivalent of feeds-and-speeds;
+- the Replay viewer as the verification tool before any material is wasted.
+
+Explicitly **not** a planar-stack monolith (the Cura/Prusa/Orca lineage) and **not**
+autonomy research. Fork basis and reasoning: `docs/research-slicer-fork.md`
+(Fractal Cortex, GPL-3.0).
+
 ## 4. Three audiences, three paths
 
 | Audience | Arrives with | Needs | Path |
