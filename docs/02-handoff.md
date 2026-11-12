@@ -15,7 +15,7 @@ Read this first, then `docs/00-concept.md` (the rules) and `PLAN.md` (the sessio
 | Build | `npm run build` → `dist/` — one page, ~112 KB incl. the PNG icons, no webfonts |
 | **Live** | **https://comforting-vacherin-7e37c5.netlify.app** |
 | Custom domain | `riplay.cz` — **not yet pointed**, still OVH parking |
-| Deploy method | **git-linked** → `Aeell/riplay-web` `master`; a push is the deploy |
+| Deploy method | git-linked → `Aeell/riplay-web` `master` — **but the push hook is broken (2026-11-12, §5): deploy from the dashboard, a push deploys nothing right now** |
 
 Verified live on 2026-11-10, measured from outside the browser:
 HTTP 200 over HTTPS with HSTS, design-system CSS loading (`body` = `rgb(11,11,12)`),
@@ -174,9 +174,15 @@ npm run build                                    # → dist/
 
 ### Deploys
 
-**`Aeell/riplay-web`** (public, branch `master`) is the source of truth and is linked to the
-Netlify site as of 2026-11-11, so a `git push` is the deploy and the Drop workflow is
-retired. `netlify.toml` carries the build contract — `npm run build`, publish `dist`, Node
+**`Aeell/riplay-web`** (public, branch `master`) is the source of truth and was linked to
+the Netlify site on 2026-11-11 — the live deploy honours `netlify.toml` (its custom
+headers show up on live responses), which Drop deploys never do. **But on 2026-11-12 the
+link does not fire on push**: the repo has no webhook and no pushed commit carries a
+Netlify status (`gh api repos/Aeell/riplay-web/commits/<sha>/status` → 0 for every recent
+commit), so the machine-facts commit `e3d0643` never deployed and riplay.cz still serves
+the pre-`e3d0643` build. Until the hook is fixed, deploy from the dashboard
+(Deploys → Trigger deploy) and treat a `git push` as *code on GitHub only*.
+`netlify.toml` carries the build contract — `npm run build`, publish `dist`, Node
 22, long-cache `/_astro/*`, never cache HTML — and the UI fields for build command and
 publish directory are left **empty** on purpose, because duplicating them there is how the
 two drift apart.
@@ -213,7 +219,13 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering
    both names, §2. IPv6 still unverified: no v6 route on the laptop.
-2. [x] Netlify is linked to `Aeell/riplay-web` (§5) — a `git push` is now the deploy.
+2. [ ] **Deploy hook broken (2026-11-12, evidence in §5):** a push to `master` does not
+       deploy — repo has no webhook, no commit carries a Netlify status, and live content
+       predates `e3d0643`. Owner, in the Netlify dashboard: Deploys → **Trigger deploy**
+       (ships `e3d0643` immediately), then Site configuration → Build & deploy → check the
+       repository link still watches `riplay-web` / `master` and reinstall if it asks.
+       Verify after the next push:
+       `gh api repos/Aeell/riplay-web/commits/<sha>/status`.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
 4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
        page needs no code. That is what turns this from a page into a workshop log.
