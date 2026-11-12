@@ -165,11 +165,25 @@ click. Liberation Sans (SIL OFL 1.1) stays as the offline fallback.
 the font's own metric (34.399 mm at a 50 mm em), width scales 1:1, extents in the DXF match
 the computed bounds, and every contour is a closed POLYLINE.
 
-### T2 — Converter, the CAD subset **[SHIP]**
-The browser converter trimmed to what a workshop actually rescues: STL, OBJ, PLY, GLB,
-DXF, SVG, PDF. Keeps the GPL-2.0 notice inherited from `p2r3/convert`. Serves a partner
-first, a customer second ("open this file someone sent me").
-**Done:** a real customer file that arrived in the wrong format is converted and opened.
+### T2 — `/nastroje/prevod`, the 3D subset **[SHIP]** ✅ done 2026-11-11
+The converter trimmed to what a workshop actually rescues. First slice, shipped: **STL, OBJ,
+PLY and GLB in and out** — the four a partner or a slicer will hand you. Serves a partner
+first ("this STL is wrong for my CAM"), a customer second ("open this file someone sent me").
+
+**No third-party library and therefore no GPL-2.0 inheritance** — the old tool vendored
+`p2r3/convert`, but four mesh formats are ~400 lines to read and write, so they live in
+`src/lib/mesh.mjs`. That keeps the page at 11 KB of HTML with a small script and nothing
+to licence.
+
+Still to come in T2 (not started, no pretend coverage): **PDF, DXF and SVG as 2D paths** —
+those need real path parsing and, for PDF, a raster step that this site would have to be
+honest about.
+
+**Done:** measured, not eyeballed — `scripts/verify-mesh.mjs` sends a known 10 mm cube
+through all four writers and readers and requires 12 triangles, 1000 mm³ and a 10 × 10 × 10
+box back; also proves ASCII-STL detection, OBJ quad fan-triangulation, OBJ negative indices,
+binary PLY, GLB node transforms, scale (×2 → 8000 mm³) and that broken files are refused
+with a message instead of guessed at.
 
 ### T3 — The other three, judged by the rule
 Image compressor, PDF toolkit, QR studio: each either earns a page under the audience rule

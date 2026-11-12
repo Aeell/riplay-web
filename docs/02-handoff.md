@@ -203,8 +203,11 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        `/api/font` (`netlify/functions/font.mjs`, no API key) — the browser asks us, we ask
        Google, and the TTF is cached in memory, in the Cache API and for a year on the CDN.
        Refresh the catalogue with `npm run fonts:catalog`.
-8. [ ] T2 — the converter's CAD subset (STL/OBJ/PLY/GLB/DXF/SVG/PDF), same rules: vendored
-       libraries, rewritten in this visual language, audience named.
+8. [x] T2 first slice done — `/nastroje/prevod` converts STL/OBJ/PLY/GLB in and out with
+       no third-party library (`src/lib/mesh.mjs`, verified by `scripts/verify-mesh.mjs`).
+       Still open in T2: PDF/DXF/SVG as 2D paths. That needs real path parsing, and for PDF
+       a raster step the site would have to admit to, so it stays a planned slice, not a
+       shipped claim.
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).

@@ -1,0 +1,299 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+---
+
+<Base
+  title="Nástroje — převod 3D souborů | Riplay"
+  description="STL, OBJ, PLY a GLB mezi sebou, v prohlížeči: přetáhni soubor a stáhni ho v jiném formátu. Nic se nenahrává na server."
+>
+  <section class="hero wrap">
+    <p class="eyebrow">08 — nástroje · soubory</p>
+    <h1 style="margin-top:18px">Soubor, který se <em>otevře</em>.</h1>
+    <p class="lead">
+      Někdo pošle model a stroj ho nepřečte. Přetáhni STL, OBJ, PLY nebo GLB a stáhni ho
+      v jiném z těch čtyř formátů — převod běží v tvém prohlížeči, soubor se nikam nenahrává.
+    </p>
+    <div class="hero-meta mono">
+      <span>STL · OBJ · PLY · GLB</span><span>bez registrace</span><span>bez nahrávání</span><span>zdarma</span>
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="nastroj">
+    <div class="sheet-head">
+      <h2>Převodník</h2>
+      <span class="eyebrow">01 / síť → síť</span>
+    </div>
+
+    <div class="tool">
+      <div class="tool-controls">
+        <label class="field">
+          <span>Model (STL / OBJ / PLY / GLB)</span>
+          <input id="f-file" type="file" accept=".stl,.obj,.ply,.glb" />
+        </label>
+
+        <div class="pair">
+          <label class="field">
+            <span>Převést na</span>
+            <select id="f-target">
+              <option value="stl">STL — binární, pro slicer a CAM</option>
+              <option value="obj">OBJ — textový, pro CAD a vizualizaci</option>
+              <option value="ply">PLY — textový, pro skenovací software</option>
+              <option value="glb">GLB — pro web a 3D prohlížeče</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Měřítko (×)</span>
+            <input id="f-scale" type="number" value="1" min="0.001" max="1000" step="0.001" />
+          </label>
+        </div>
+
+        <p class="mono dim" id="f-state">zatím žádný soubor</p>
+        <p class="mono" id="f-error" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="tool-preview" id="f-drop">
+        <p class="mono dim" id="f-drop-hint">přetáhni soubor sem</p>
+        <dl class="readout" id="f-readout" hidden>
+          <div><dt>formát</dt><dd id="r-format">—</dd></div>
+          <div><dt>trojúhelníků</dt><dd id="r-tris">—</dd></div>
+          <div><dt>vrcholů</dt><dd id="r-verts">—</dd></div>
+          <div><dt>rozměry</dt><dd id="r-size">—</dd></div>
+          <div><dt>objem</dt><dd id="r-volume">—</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="tool-actions">
+      <button class="btn" id="b-download" type="button" disabled>Stáhnout</button>
+      <span class="mono dim" id="f-out">vyber soubor</span>
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="co-neumi">
+    <div class="sheet-head">
+      <h2>Co to neumí</h2>
+      <span class="eyebrow">02 / meze</span>
+    </div>
+
+    <div class="bench">
+      <div class="bench-row"><b>PDF, DXF, SVG</b><span class="svc">2D</span><span class="state">ne — zatím jen 3D sítě; 2D cesty přijdou později</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>GLTF s externí .bin</b><span class="svc">formát</span><span class="state">ne — jeden soubor; .glb je v pořádku</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Materiály a textury</b><span class="svc">vzhled</span><span class="state">ne — zahazují se, zůstává geometrie</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Jednotky</b><span class="svc">měřítko</span><span class="state">soubor je nenese — proto je měřítko na tobě</span><i class="dot warn"></i></div>
+    </div>
+
+    <p class="dim" style="max-width:62ch;margin-top:22px">
+      Formáty čte a zapisuje tenhle web sám, bez cizí knihovny — takže tu není žádná
+      licence třetí strany a velikost stránky zůstává malá. Výsledek je vždy trojúhelníková
+      síť: quad se rozpustí na dva trojúhelníky, křivky a materiály se ztratí. STL ani OBJ
+      jednotky neukládají, takže rozměr je jen číslo — měřítko nastav ručně.
+    </p>
+
+    <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">
+      <Icon name="cam" size={14} />
+      Písmo na dráhu najdeš v <a href="/nastroje/">druhém nástroji</a>.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .tool {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 1px;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+  }
+  .tool-controls {
+    background: var(--bg);
+    padding: 22px 20px;
+    display: grid;
+    gap: 14px;
+    align-content: start;
+  }
+  .tool-preview {
+    background: var(--panel);
+    border-left: 1px solid var(--line-soft);
+    padding: 20px;
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    min-height: 220px;
+  }
+  .tool-preview.dragging { outline: 1px dashed var(--accent); outline-offset: -6px; }
+  .field { display: grid; gap: 6px; }
+  .field > span {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+  }
+  .field input[type='number'],
+  .field select,
+  .field input[type='file'] {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 10px;
+    width: 100%;
+  }
+  .field select { appearance: none; cursor: pointer; }
+  .field input:focus-visible,
+  .field select:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+  .field input[type='file']::file-selector-button {
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 10px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  .field input[type='file']::file-selector-button:hover { border-color: var(--dim); }
+  .pair { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+  #f-error { color: var(--warn); min-height: 1em; margin: 0; }
+  #f-state { margin: 0; }
+  .readout { margin: 0; display: grid; gap: 0; border-top: 1px solid var(--line-soft); }
+  .readout > div {
+    display: grid;
+    grid-template-columns: 8.5rem 1fr;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .readout dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+  }
+  .readout dd { margin: 0; font-family: var(--mono); font-size: 12px; color: var(--ink); }
+  .tool-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .btn:disabled { border-color: var(--line); color: var(--dimmer); cursor: not-allowed; }
+  .btn:disabled:hover { background: transparent; color: var(--dimmer); }
+  @media (max-width: 880px) {
+    .tool { grid-template-columns: 1fr; }
+    .tool-preview { border-left: 0; border-top: 1px solid var(--line-soft); }
+  }
+</style>
+
+<script>
+  import { meshFrom, writeMesh, stats, scaleMesh, outputName } from '../../lib/mesh.mjs';
+
+  const $ = (id) => document.getElementById(id);
+  const state = { name: null, tris: null };
+
+  const number = (id, fallback) => {
+    const value = parseFloat($(id).value);
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+  };
+
+  function showStats(tris, format) {
+    const s = stats(tris);
+    $('r-format').textContent = format;
+    $('r-tris').textContent = s.triangles.toLocaleString('cs-CZ');
+    $('r-verts').textContent = s.vertices.toLocaleString('cs-CZ');
+    $('r-size').textContent = s.size.map((v) => v.toFixed(2)).join(' × ');
+    const cm3 = s.volume / 1000;
+    $('r-volume').textContent = s.volume >= 1000
+      ? `${cm3.toFixed(2)} cm³`
+      : `${s.volume.toFixed(2)} mm³`;
+    $('f-readout').hidden = false;
+    $('f-drop-hint').hidden = true;
+  }
+
+  function reset(forget = true) {
+    if (forget) {
+      state.name = null;
+      state.tris = null;
+    }
+    $('b-download').disabled = true;
+    $('f-readout').hidden = true;
+    $('f-drop-hint').hidden = false;
+    $('f-state').textContent = 'zatím žádný soubor';
+    $('f-out').textContent = 'vyber soubor';
+  }
+
+  async function load(file) {
+    $('f-error').textContent = '';
+    $('f-state').textContent = `čtu ${file.name}…`;
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const { tris, format } = meshFrom(file.name, bytes);
+      state.name = file.name;
+      state.tris = tris;
+      showStats(tris, format);
+      $('b-download').disabled = false;
+      $('f-state').textContent = `${file.name} — ${(file.size / 1024).toFixed(0)} kB`;
+      suggestTarget(format);
+      updateOutput();
+    } catch (error) {
+      reset();
+      $('f-state').textContent = file.name;
+      $('f-error').textContent = error.message;
+    }
+  }
+
+  function suggestTarget(format) {
+    const order = { 'stl-binary': 'obj', 'stl-ascii': 'obj', obj: 'stl', ply: 'stl', glb: 'stl' };
+    $('f-target').value = order[format] ?? 'stl';
+  }
+
+  function updateOutput() {
+    if (!state.name) return;
+    $('f-out').textContent = `→ ${outputName(state.name, $('f-target').value)}`;
+  }
+
+  $('f-file').addEventListener('change', (event) => {
+    const file = event.target.files?.[0];
+    if (file) load(file);
+  });
+
+  $('f-target').addEventListener('change', updateOutput);
+
+  $('b-download').addEventListener('click', () => {
+    if (!state.tris) return;
+    try {
+      const target = $('f-target').value;
+      const scaled = scaleMesh(state.tris, number('f-scale', 1));
+      const { bytes, mime } = writeMesh(scaled, target);
+      const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = outputName(state.name, target);
+      link.click();
+      URL.revokeObjectURL(url);
+      $('f-error').textContent = '';
+    } catch (error) {
+      $('f-error').textContent = error.message;
+    }
+  });
+
+  const drop = $('f-drop');
+  for (const type of ['dragenter', 'dragover']) {
+    drop.addEventListener(type, (event) => {
+      event.preventDefault();
+      drop.classList.add('dragging');
+    });
+  }
+  for (const type of ['dragleave', 'drop']) {
+    drop.addEventListener(type, () => drop.classList.remove('dragging'));
+  }
+  drop.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) load(file);
+  });
+</script>

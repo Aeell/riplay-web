@@ -23,9 +23,11 @@ Always pin the port: this shell exports `PORT=0`.
 
 Node 22+ (this machine: 26). No other services required.
 
-The font picker calls `/api/font`, which only exists where the function runs — the deployed
-site, or `npx netlify dev`. `npm run preview` serves static files only, so there the picker
-reports that it could not load a font; uploads and the built-in face still work.
+The font picker calls `/api/font`, which only exists where the function runs.
+`npm run preview:full` (after a build) serves `dist/` **and** that function on
+`127.0.0.1:4331`, so the whole toolbox works locally without the Netlify CLI. Plain
+`npm run preview` serves static files only, and there the picker reports that it could not
+load a font; uploads, the built-in face and the 3D converter still work.
 
 To refresh the Google Fonts catalogue (1 request, no key): `npm run fonts:catalog`.
 
@@ -37,10 +39,10 @@ PLAN.md              30 sessions, each with a done test
 src/styles/          the design language (graphite, hairline grid, one accent)
 src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
-src/pages/           home, /archiv (the old site), /nastroje (the toolbox)
-src/lib/             font-geometry.mjs — outlines to SVG/DXF in mm, testable from Node
+src/pages/           home, /archiv (the old site), /nastroje + /nastroje/prevod (tools)
+src/lib/             font-geometry.mjs (text → SVG/DXF), mesh.mjs (STL/OBJ/PLY/GLB)
 netlify/functions/   font.mjs — /api/font, the only server-side code (Google Fonts → TTF)
-scripts/             verify-font2dxf.mjs, build-font-catalog.mjs (the Google Fonts list)
+scripts/             verify-font2dxf.mjs, verify-mesh.mjs, build-font-catalog.mjs
 ```
 
 ## Adding a part (from D2)

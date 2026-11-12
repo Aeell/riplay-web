@@ -8,7 +8,10 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "astro check",
-    "fonts:catalog": "node scripts/build-font-catalog.mjs"
+    "fonts:catalog": "node scripts/build-font-catalog.mjs",
+    "preview:full": "node scripts/serve-local.mjs",
+    "verify:mesh": "node scripts/verify-mesh.mjs",
+    "verify:font": "node scripts/verify-font2dxf.mjs"
   },
   "dependencies": {
     "astro": "^5.0.0",
