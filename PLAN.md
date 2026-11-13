@@ -307,8 +307,41 @@ printed on a real machine (bench: user-defined M-code files + U-joint config), a
 test suite on a known model.
 **Done:** `riplay-slicer slice model.stl` produces gcode for a real print.
 
-### D17 — Viewer
-Browser layer preview (Three.js): scrub through layers, highlight perimeters.
+### D17 — Viewer — **done 2026-11-13**
+Browser layer preview: scrub through layers, perimeters distinguished from infill.
+`/nastroje/vrstvy` takes a `.gcode` in the browser (nothing uploaded), parses it with
+`src/lib/gcode.mjs` and draws one layer at a time on a 2D canvas, with prev/next, a slider
+and readouts for layer count, Z, paths, filament and footprint.
+
+**Deviation from the plan, recorded:** the plan said Three.js. Three.js is ~600 KB before
+the first line of my code, and the site may not use a CDN, so it would have been a half-
+megabyte download to draw flat polylines. A 2D canvas draws the same picture at a few KB
+and keeps the whole tool self-contained. A rotatable 3D view stays listed as a limit on
+the page, not as a feature I claim.
+
+**What a real file taught (this is the point of D17):** the synthetic test passed while the
+reader was wrong in three ways that only a real slice could show.
+
+- **z-hop invented layers.** The engine lifts Z between travel moves, so Z goes 0.3 → 0.6 →
+  0.3 inside one layer. Layer-per-Z-change reported **51 365 layers** for a 445-layer print.
+  Fixed by using the file's own `;Layer` markers when present (`;LAYER:` and `;LAYER_CHANGE`
+  too), with rising-Z only as a documented fallback — and the page tells the user which
+  source it used.
+- **A leading `Z30` poisoned layer 1.** A layer's height is the lowest Z before its first
+  toolpath, not the first or the highest: the hop to 0.6 comes before the first extrude, and
+  the layer is still the 0.3 one.
+- **The marker test was case-sensitive** (`Layer` but not `LAYER`), so the reader silently
+  fell back to Z for files it should have read exactly.
+
+After the fixes the reader reports **445 layers, z 0.30 → 133.50 mm, 31 762 mm of filament**
+for `/tmp/pipe.gcode`, matching the engine's own 445 `;Layer` markers, and the browser draws
+each layer (≈12 000 painted pixels on layer 1, ≈7 000 at 223).
+
+**Verification:** `scripts/verify-gcode.mjs` — 18 checks (`npm run verify:gcode`), including
+the three failures above as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
+531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
+**Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
+(§5 of the handoff).
 **Done:** a real sliced model is scrubbable in the browser.
 
 ### D18 — One engine, two uses

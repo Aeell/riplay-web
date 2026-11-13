@@ -1,0 +1,334 @@
+---
+import Base from '../../layouts/Base.astro';
+import Icon from '../../components/Icon.astro';
+---
+
+<Base
+  title="Nástroje — G-code po vrstvách | Riplay"
+  description="Otevři .gcode a přejížděj vrstvy. Uvidíš, co stroj opravdu pojede — obrysy a výplň, v milimetrech, bez nahrávání na server."
+>
+  <section class="hero wrap">
+    <p class="eyebrow">09 — nástroje · g-code</p>
+    <h1 style="margin-top:18px">Dráha, kterou si můžeš <em>přejet</em>.</h1>
+    <p class="lead">
+      Než pustíš materiál, podívej se, co soubor opravdu obsahuje. Přetáhni <b>.gcode</b> a jezdi
+      po vrstvách — obrysy, výplň a rozměry. Soubor se nikam nenahrává, čte se v prohlížeči.
+    </p>
+    <div class="hero-meta mono">
+      <span>G1 po vrstvách</span><span>obrysy vs. výplň</span><span>v milimetrech</span><span>zdarma</span>
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="nastroj">
+    <div class="sheet-head">
+      <div>
+        <h2>Náhled vrstev</h2>
+        <p class="mono dim" id="g-state">zatím žádný soubor</p>
+      </div>
+      <span class="eyebrow">01 / gcode → oko</span>
+    </div>
+
+    <div class="viewer" id="g-drop">
+      <div class="controls">
+        <label class="field">
+          <span>Soubor (.gcode, .nc, .tap)</span>
+          <input id="g-file" type="file" accept=".gcode,.gco,.nc,.tap,.txt" />
+        </label>
+
+        <p class="mono" id="g-error" role="status" aria-live="polite"></p>
+
+        <div class="scrub" hidden id="g-scrub">
+          <div class="scrub-head">
+            <b class="mono" id="g-layer">vrstva —</b>
+            <span class="mono dim" id="g-z">z — mm</span>
+          </div>
+          <input type="range" id="g-range" min="0" max="0" value="0" step="1" aria-label="Vrstva" />
+          <div class="steppers">
+            <button class="btn btn-quiet" type="button" id="g-prev">← předchozí</button>
+            <button class="btn btn-quiet" type="button" id="g-next">další →</button>
+          </div>
+        </div>
+
+        <dl class="readout" id="g-readout" hidden>
+          <div><dt>vrstev</dt><dd id="r-layers">—</dd></div>
+          <div><dt>draha v této vrstvě</dt><dd id="r-paths">—</dd></div>
+          <div><dt>extruze celkem</dt><dd id="r-extrusion">—</dd></div>
+          <div><dt>půdorys</dt><dd id="r-bounds">—</dd></div>
+          <div><dt>řádků</dt><dd id="r-lines">—</dd></div>
+        </dl>
+
+        <p class="mono dim" id="g-notes" hidden></p>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="g-canvas" aria-label="Náhled vrstvy G-code"></canvas>
+        <p class="mono dim hint" id="g-hint">přetáhni .gcode sem</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet wrap" id="co-neumi">
+    <div class="sheet-head">
+      <h2>Co to neumí</h2>
+      <span class="eyebrow">02 / meze</span>
+    </div>
+
+    <div class="bench">
+      <div class="bench-row"><b>3D náhled s otáčením</b><span class="svc">pohled</span><span class="state">ne — kreslí se půdorys jedné vrstvy; na „co pojede“ to stačí</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Oblouky G2/G3</b><span class="svc">dráha</span><span class="state">jen koncový bod — nástroj to napíše, nezkreslí</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Relativní souřadnice G91</b><span class="svc">dráha</span><span class="state">nástroj to řekne; počítá s absolutními</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Simulace stroje</b><span class="svc">čas</span><span class="state">ne — žádné zrychlení, teplota ani tlak</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Soubor nad 40 MB</b><span class="svc">velikost</span><span class="state">odmítne — takový soubor patří do sliceru</span><i class="dot warn"></i></div>
+    </div>
+
+    <p class="dim" style="max-width:62ch;margin-top:22px">
+      Náhled čte jen to, co je v souboru: <span class="mono">G0/G1</span>, změny
+      <span class="mono">Z</span> a komentáře <span class="mono">;Shell</span> /
+      <span class="mono">;Internal Infill</span>. Soubor bez komentářů se vykreslí jednou barvou —
+      hádat, co je obrys, by bylo horší než to nevědět. Extruze se počítá jako ujetá vzdálenost,
+      ať je na <span class="mono">E</span> nebo na <span class="mono">U</span>.
+    </p>
+
+    <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">
+      <Icon name="cam" size={14} />
+      Model na dráhu převede <a href="/nastroje/prevod/">převodník</a>, písmo <a href="/nastroje/">druhý nástroj</a>.
+    </p>
+  </section>
+</Base>
+
+<script>
+  import { parseGcode } from '../../lib/gcode.mjs';
+
+  const MAX_BYTES = 40 * 1024 * 1024;
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+  const fileInput = $<HTMLInputElement>('g-file');
+  const drop = $<HTMLElement>('g-drop');
+  const canvas = $<HTMLCanvasElement>('g-canvas');
+  const hint = $<HTMLElement>('g-hint');
+  const state = $<HTMLElement>('g-state');
+  const error = $<HTMLElement>('g-error');
+  const scrub = $<HTMLElement>('g-scrub');
+  const range = $<HTMLInputElement>('g-range');
+  const readout = $<HTMLElement>('g-readout');
+  const notes = $<HTMLElement>('g-notes');
+
+  let parsed: ReturnType<typeof parseGcode> | null = null;
+  let index = 0;
+
+  // Millimetres are the whole point here: a 108.36 mm part must not read as "108".
+  const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : '—');
+
+  function draw() {
+    if (!canvas || !parsed || !parsed.layers.length) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    if (canvas.width !== Math.round(width * dpr)) {
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+
+    const b = parsed.bounds;
+    if (!b || b.width === 0 || b.height === 0) return;
+    const pad = 24;
+    const scale = Math.min((width - pad * 2) / b.width, (height - pad * 2) / b.height);
+    const ox = (width - b.width * scale) / 2;
+    const oy = (height - b.height * scale) / 2;
+    const px = (x: number) => ox + (x - b.minX) * scale;
+    const py = (y: number) => height - oy - (y - b.minY) * scale; // G-code Y grows up
+
+    const layer = parsed.layers[index];
+    for (const pass of ['infill', 'perimeter'] as const) {
+      ctx.beginPath();
+      for (const path of layer.paths) {
+        if (path.kind !== pass) continue;
+        path.pts.forEach((pt, i) => {
+          const x = px(pt.x);
+          const y = py(pt.y);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+      }
+      ctx.strokeStyle = pass === 'perimeter' ? '#e9e7e2' : '#4b5157';
+      ctx.lineWidth = pass === 'perimeter' ? 1.1 : 0.8;
+      ctx.lineJoin = 'round';
+      ctx.stroke();
+    }
+  }
+
+  function show(i: number) {
+    if (!parsed || !parsed.layers.length) return;
+    index = Math.max(0, Math.min(parsed.layers.length - 1, i));
+    if (range) range.value = String(index);
+    const layer = parsed.layers[index];
+    const label = $<HTMLElement>('g-layer');
+    const z = $<HTMLElement>('g-z');
+    const paths = $<HTMLElement>('r-paths');
+    if (label) label.textContent = `vrstva ${index + 1} / ${parsed.layers.length}`;
+    if (z) z.textContent = `z ${fmt(layer.z)} mm`;
+    if (paths) paths.textContent = String(layer.paths.length);
+    draw();
+  }
+
+  function load(name: string, text: string) {
+    if (error) error.textContent = '';
+    const result = parseGcode(text);
+    if (!result.layers.length) {
+      if (error) error.textContent = 'v souboru nejsou žádné dráhy G0/G1 se souřadnicemi';
+      return;
+    }
+    parsed = result;
+    index = 0;
+    if (state) state.textContent = `${name} · ${result.stats.layers} vrstev · ${result.stats.lines} řádků`;
+    scrub?.removeAttribute('hidden');
+    readout?.removeAttribute('hidden');
+    hint?.setAttribute('hidden', '');
+
+    const set = (id: string, value: string) => {
+      const el = $<HTMLElement>(id);
+      if (el) el.textContent = value;
+    };
+    set('r-layers', String(result.stats.layers));
+    set('r-extrusion', `${Math.round(result.stats.extrusion).toLocaleString('cs-CZ')} mm`);
+    set('r-bounds', result.bounds ? `${fmt(result.bounds.width)} × ${fmt(result.bounds.height)} mm` : '—');
+    set('r-lines', String(result.stats.lines));
+
+    if (notes) {
+      if (result.stats.truncated) {
+        notes.textContent = 'soubor je moc dlouhý — načtena jen část';
+        notes.removeAttribute('hidden');
+      } else if (result.stats.unsupported.length) {
+        notes.textContent = `pozor: ${result.stats.unsupported.join(' · ')}`;
+        notes.removeAttribute('hidden');
+      } else if (result.stats.layerSource === 'z') {
+        notes.textContent = 'soubor nemá značky vrstev — hranice jsou odhadnuté ze Z, z-hop je může posunout';
+        notes.removeAttribute('hidden');
+      } else {
+        notes.setAttribute('hidden', '');
+      }
+    }
+
+    if (range) {
+      range.max = String(Math.max(0, result.stats.layers - 1));
+      range.value = '0';
+    }
+    show(0);
+  }
+
+  function handleFile(file: File) {
+    if (file.size > MAX_BYTES) {
+      if (error) error.textContent = `soubor má ${(file.size / 1048576).toFixed(1)} MB, limit je 40 MB`;
+      return;
+    }
+    file.text().then((text) => load(file.name, text)).catch(() => {
+      if (error) error.textContent = 'soubor se nepodařilo přečíst';
+    });
+  }
+
+  fileInput?.addEventListener('change', () => {
+    const file = fileInput.files?.[0];
+    if (file) handleFile(file);
+  });
+
+  drop?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    drop.classList.add('is-over');
+  });
+  drop?.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+  drop?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    drop.classList.remove('is-over');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleFile(file);
+  });
+
+  range?.addEventListener('input', () => show(Number(range.value)));
+  $<HTMLButtonElement>('g-prev')?.addEventListener('click', () => show(index - 1));
+  $<HTMLButtonElement>('g-next')?.addEventListener('click', () => show(index + 1));
+  window.addEventListener('resize', draw);
+</script>
+
+<style>
+  .viewer {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 1px;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+  }
+  .viewer.is-over {
+    border-color: var(--accent);
+  }
+  .controls {
+    background: var(--bg);
+    padding: 22px 20px;
+    display: grid;
+    gap: 16px;
+    align-content: start;
+  }
+  .canvas-wrap {
+    position: relative;
+    background: var(--panel);
+    min-height: 460px;
+  }
+  #g-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 460px;
+  }
+  .hint {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    font-size: 12px;
+  }
+  .scrub {
+    display: grid;
+    gap: 10px;
+  }
+  .scrub[hidden] {
+    display: none;
+  }
+  .scrub-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .scrub-head b {
+    font-weight: 500;
+  }
+  #g-range {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .steppers {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-quiet {
+    border-color: var(--line);
+    color: var(--dim);
+  }
+  .btn-quiet:hover {
+    background: var(--line);
+    color: var(--ink);
+  }
+  @media (max-width: 900px) {
+    .viewer {
+      grid-template-columns: 1fr;
+    }
+    .canvas-wrap,
+    #g-canvas {
+      min-height: 360px;
+    }
+  }
+</style>

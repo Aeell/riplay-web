@@ -12,7 +12,7 @@ Read this first, then `docs/00-concept.md` (the rules) and `PLAN.md` (the sessio
 | Source | `github.com/Aeell/riplay-web` — **public**, branch `master` |
 | Local path | `~/Projects/riplay` |
 | Astro | 5.18.2 (a v7 exists; deliberately not migrating) |
-| Build | `npm run build` → `dist/` — seven routes, no webfonts blocking text |
+| Build | `npm run build` → `dist/` — eleven routes, no webfonts blocking text |
 | **Live** | **https://riplay.cz** — site `f3abf7bc-b006-4cc4-a72a-8e3832df1c2d`, default URL `comforting-vacherin-7e37c5.netlify.app` |
 | Custom domain | `riplay.cz` — **live since 2026-11-11**, Let's Encrypt covering apex + `www`, records in §2 |
 | Deploy method | git-linked → `Aeell/riplay-web` `master`. **Paused 2026-11-13: the 300 free credits are spent, so production deploys are refused** — the hook is fine. See §5 and `DEPLOY.md` |
@@ -298,6 +298,12 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        verified by `scripts/verify-mesh.mjs` and `scripts/verify-paths2d.mjs`. Files over
        40 MB are refused with a message instead of freezing the tab. Only PDF stays open,
        because it is a page rather than a path.
+9. [x] D17 done — `/nastroje/vrstvy` reads a `.gcode` in the browser and scrubs it by layer
+       (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 18 checks). Uses a 2D canvas, not
+       Three.js: see the deviation recorded in `PLAN.md` D17. Reads `;Layer` / `;LAYER:` /
+       `;LAYER_CHANGE` markers; without markers it falls back to rising Z and says so. The
+       first real file broke it three times (z-hop → 51 365 "layers", leading `Z30` poisoning
+       layer 1, case-sensitive marker regex) — all three are now regression tests.
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).
