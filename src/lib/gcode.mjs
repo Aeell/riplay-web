@@ -1,93 +1,86 @@
-// A G-code reader for the layer viewer. It answers one question: what will the machine
-// actually run, layer by layer. It is deliberately not a G-code simulator — it does not model
-// acceleration, pressure advance or machine state.
+// A G-code reader for the layer viewer. It answers one question: what will the machine actually
+// run, layer by layer. It is not a simulator — no acceleration, pressure advance or machine state.
 //
 // The engine this workshop uses marks each layer with ";Layer <n>" and each region with
-// ;Shell / ;Solid Infill / ;Internal Infill. Those markers decide the path colour; a file
-// without them still renders, just in one colour, because guessing is worse than plain.
+// ;Shell / ;Solid Infill / ;Internal Infill. Those markers decide the path colour; a file without
+// them still renders, in one colour, because guessing is worse than plain.
 
+// A letter followed by a number: "X10", "E-0.8", "U1.25".
 const WORD = /([A-Za-z])(-?\d*\.?\d+)/g;
 
-// 40 MB of short G-code lines is roughly a million of them, so the line ceiling matches the
-// file ceiling: a file the tool accepts is a file it reads whole.
-export function parseGcode(text, { maxLines = 1_000_000 } = {}) {
+// 40 MB of short G-code lines is roughly a million of them, so the line ceiling matches the file
+// ceiling: a file the tool accepts is a file it reads whole.
+const DEFAULT_MAX_LINES = 1_000_000;
+
+export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES } = {}) {
   const layers = [];
-  let current = null;
-  let kind = null; // 'perimeter' | 'infill' | null
-  let path = null; // the polyline being built
-
-  let x = 0;
-  let y = 0;
-  let z = 0;
-  let absolute = true;
-  // Absolute extrusion words carry a running total (E1, E2, E3 = 2 mm of filament), so the
-  // distance travelled is the delta, not the value. Our own post uses U for the same thing.
-  let lastE = 0;
-  let lastU = 0;
-
-  // Layer boundaries come from the file's own markers when it has them (our engine writes
-  // ";Layer 12", PrusaSlicer ";LAYER_CHANGE", Cura ";LAYER:"). That is the only reliable source:
-  // with z-hop on, Z oscillates 0.3 → 0.6 → 0.3 inside a single layer.
-  const hasMarkers = /^\s*;\s*LAYER/im.test(text); // ;Layer 0, ;LAYER:, ;LAYER_CHANGE
-
   const stats = {
     lines: 0,
     layers: 0,
-    moves: 0,
-    perimeterPaths: 0,
-    infillPaths: 0,
-    travelMoves: 0,
+    layerSource: 'z', // 'markers' | 'z'
     extrusion: 0,
     arcs: 0,
     unsupported: [],
     truncated: false,
   };
 
+  let current = null;
+  let kind = null; // 'perimeter' | 'infill' | null
+  let path = null;
+
+  let x = 0;
+  let y = 0;
+  let z = 0;
+  let absolute = true; // G90 / G91
+  let relativeE = false; // M82 / M83
+  let lastE = 0; // the extruder's own running total
+  let tool = null;
+  let afterToolChange = false; // the next E word establishes a counter instead of adding to it
+
+  // Layer boundaries come from the file's markers when it has them (our engine writes ";Layer 12",
+  // PrusaSlicer ";LAYER_CHANGE", Cura ";LAYER:"). Nothing else is reliable: with z-hop on, Z
+  // oscillates 0.3 → 0.6 → 0.3 inside a single layer.
+  const hasMarkers = /^\s*;\s*LAYER/im.test(text);
+  // LinuxCNC has no E, so our post writes filament on U. A file that also writes E is using U as a
+  // real fourth axis, and counting it as filament would be wrong.
+  const usesE = /(?:^|\s)E-?\d/m.test(text);
+
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
 
+  const note = (what) => {
+    if (!stats.unsupported.includes(what)) stats.unsupported.push(what);
+  };
+
   const flush = () => {
-    if (path && path.pts.length > 1 && current) {
-      current.paths.push(path);
-      if (path.kind === 'perimeter') stats.perimeterPaths += 1;
-      else stats.infillPaths += 1;
-    }
+    if (path && path.pts.length > 1 && current) current.paths.push(path);
     path = null;
   };
 
-  // A new layer starts when Z rises. It must not start when Z falls: z-hop lifts and drops the
-  // nozzle inside the same layer, and treating each hop as a layer turned a 445-layer print into
-  // 51 365 empty "layers" the first time this reader met a real file.
-  const startLayer = (z0) => {
+  const enterLayer = (z0) => {
     flush();
     current = { z: z0, paths: [] };
     layers.push(current);
   };
 
-  const ensureLayer = (nextZ) => {
+  const trackZ = (nextZ) => {
     if (!current) {
-      startLayer(nextZ);
+      enterLayer(nextZ);
       return;
     }
     if (!hasMarkers) {
-      // No markers: a rising Z is the only signal, and z-hop can fool it. The page says so
-      // rather than pretending the layer list is exact.
-      if (nextZ > current.z + 1e-6) startLayer(nextZ);
+      // No markers: a rising Z is the only signal, and z-hop can fool it. The page says so.
+      if (nextZ > current.z + 1e-6) enterLayer(nextZ);
       return;
     }
-    // With markers, the marker decides where a layer starts. The layer's height is the LOWEST Z
-    // before its first toolpath: z-hop lifts to 0.6 before the first extrude, and the layer is
-    // still the 0.3 one.
-    if (current.z === null || current.paths.length === 0) {
-      current.z = current.z === null ? nextZ : Math.min(current.z, nextZ);
-    }
+    // With markers, the marker starts the layer and the LOWEST Z before its first toolpath is its
+    // height: the hop to 0.6 comes before the first extrude, and the layer is still the 0.3 one.
+    if (current.paths.length === 0) current.z = Math.min(current.z ?? nextZ, nextZ);
   };
 
-  const note = (what) => {
-    if (!stats.unsupported.includes(what)) stats.unsupported.push(what);
-  };
+  const round = (value) => Math.round(value * 1000) / 1000;
 
   for (const raw of text.split(/\r?\n/)) {
     stats.lines += 1;
@@ -99,104 +92,130 @@ export function parseGcode(text, { maxLines = 1_000_000 } = {}) {
     const line = raw.trim();
     if (!line) continue;
 
-    if (line.startsWith(';')) {
+    if (line[0] === ';') {
       if (/^;\s*Shell/i.test(line)) kind = 'perimeter';
       else if (/^;\s*(Internal|Solid)\s+Infill/i.test(line)) kind = 'infill';
       else if (/^;\s*LAYER/i.test(line)) {
-        startLayer(null); // height comes from the Z moves inside the layer
+        enterLayer(null);
         kind = null;
       }
       continue;
     }
 
-    const words = {};
+    let words = null;
     WORD.lastIndex = 0;
-    let match;
-    while ((match = WORD.exec(line)) !== null) words[match[1].toUpperCase()] = Number(match[2]);
-    if (Object.keys(words).length === 0) continue;
-
-    const code = /^([GM])\s*(\d+(?:\.\d+)?)/i.exec(line);
-    const letter = code ? code[1].toUpperCase() : '';
-    const number = code ? Number(code[2]) : null;
-
-    if (letter === 'M') continue;
-
-    if (number === 91) {
-      note('G91 (relativní souřadnice) — náhled počítá s absolutními');
-      absolute = false;
-      continue;
+    for (let m = WORD.exec(line); m; m = WORD.exec(line)) {
+      (words ??= {})[m[1].toUpperCase()] = Number(m[2]);
     }
-    if (number === 90) {
-      absolute = true;
-      continue;
-    }
-    if (number === 2 || number === 3) {
-      stats.arcs += 1;
-      note('G2/G3 (oblouky) — kreslí se jen koncový bod');
-    }
-    if (number !== 0 && number !== 1 && number !== 2 && number !== 3) continue;
+    if (!words) continue;
 
-    if (words.Z !== undefined) {
-      z = words.Z;
-      ensureLayer(round(z));
-    }
-
-    const hasXY = words.X !== undefined || words.Y !== undefined;
-    if (!hasXY) continue;
-
-    const nx = words.X !== undefined ? (absolute ? words.X : x + words.X) : x;
-    const ny = words.Y !== undefined ? (absolute ? words.Y : y + words.Y) : y;
-    // Where the move starts. A path has to remember it, or every path loses its first segment
-    // and a path made of one move disappears entirely.
-    const px = x;
-    const py = y;
-    x = nx;
-    y = ny;
-    stats.moves += 1;
-
-    const extruding = words.U !== undefined || words.E !== undefined;
-    if (!extruding) {
-      stats.travelMoves += 1;
+    // A tool change starts a new extruder with its own filament counter, so its first E word only
+    // establishes that counter. The first T in a file is not a change — a leading "T0" is how
+    // single-extruder files start, and dropping the first move there would be its own lie.
+    if (words.T !== undefined) {
+      if (tool !== null && tool !== words.T) afterToolChange = true;
+      tool = words.T;
       flush();
       continue;
     }
-    if (words.E !== undefined) {
-      stats.extrusion += absolute ? Math.abs(words.E - lastE) : Math.abs(words.E);
-      lastE = words.E;
+
+    const head = /^([GM])\s*\d/i.exec(line);
+    const command = head ? head[1].toUpperCase() : '';
+    const number = head ? Number(/\d+/.exec(line)[0]) : -1;
+
+    if (command === 'M') {
+      if (number === 82) {
+        // Coming from relative extrusion there is no absolute total to compare against, so the
+        // first absolute value after the switch establishes one.
+        if (relativeE) afterToolChange = true;
+        relativeE = false;
+      } else if (number === 83) relativeE = true;
+      continue;
     }
-    if (words.U !== undefined) {
-      stats.extrusion += absolute ? Math.abs(words.U - lastU) : Math.abs(words.U);
-      lastU = words.U;
+    if (command !== 'G') continue;
+
+    if (number === 90) absolute = true;
+    else if (number === 91) absolute = false;
+    else if (number === 92) {
+      // G92 redefines the current position without moving. Without this, the next absolute move
+      // after a reset/counter change is measured from a stale position.
+      if (words.X !== undefined) x = words.X;
+      if (words.Y !== undefined) y = words.Y;
+      if (words.Z !== undefined) z = words.Z;
+      const reset = usesE ? words.E : words.U;
+      if (reset !== undefined) {
+        lastE = reset;
+        afterToolChange = false;
+      }
+    } else if (number === 2 || number === 3) {
+      stats.arcs += 1;
+      note('G2/G3 (oblouky) — kreslí se jen koncový bod');
+    } else if (number !== 0 && number !== 1) {
+      continue;
     }
 
-    ensureLayer(round(z));
+    if (words.Z !== undefined) {
+      z = absolute ? words.Z : z + words.Z;
+      trackZ(round(z));
+    }
+
+    const hasXY = words.X !== undefined || words.Y !== undefined;
+    const written = usesE ? words.E : words.U;
+    let deposit = 0;
+    if (written !== undefined) {
+      if (relativeE) deposit = written;
+      else if (afterToolChange) {
+        lastE = written;
+        afterToolChange = false;
+      } else {
+        deposit = written - lastE;
+        lastE = written;
+      }
+    }
+
+    if (!hasXY) continue;
+
+    const px = x;
+    const py = y;
+    x = words.X !== undefined ? (absolute ? words.X : x + words.X) : x;
+    y = words.Y !== undefined ? (absolute ? words.Y : y + words.Y) : y;
+
+    // A move without positive deposit is travel: a retraction, an unretract, or a hop. Drawing it
+    // would put a line where the machine put nothing, and counting it as filament would inflate
+    // every retraction on the way out and back in.
+    if (!(deposit > 0)) {
+      flush();
+      continue;
+    }
+    stats.extrusion += deposit;
+
+    trackZ(round(z));
     if (!path || path.kind !== (kind ?? 'infill')) {
       flush();
       path = { kind: kind ?? 'infill', pts: [{ x: px, y: py }, { x, y }] };
     } else {
       path.pts.push({ x, y });
     }
-    if (x < minX) minX = x;
-    if (y < minY) minY = y;
+    if (px < minX) minX = px;
+    if (py < minY) minY = py;
     if (x > maxX) maxX = x;
     if (y > maxY) maxY = y;
   }
 
   flush();
 
-  // Layers that never produced a toolpath are not layers: an initial Z30 move before the first
-  // marker, or a trailing marker, would otherwise show as an empty layer the user can scrub to.
+  // A layer with no toolpath is not a layer: an initial Z30 move before the first marker, or a
+  // trailing marker, would otherwise become an empty layer to scrub through.
   const drawn = layers
     .filter((layer) => layer.paths.length > 0)
     .map((layer) => ({ ...layer, z: layer.z ?? 0 }));
+
   stats.layers = drawn.length;
   stats.layerSource = hasMarkers ? 'markers' : 'z';
 
-  const bounds = layers.length && minX !== Infinity
+  const bounds = minX !== Infinity
     ? { minX, minY, maxX, maxY, width: maxX - minX, height: maxY - minY }
     : null;
 
   return { layers: drawn, bounds, stats };
 }
-
-const round = (value) => Math.round(value * 1000) / 1000;

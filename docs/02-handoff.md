@@ -299,7 +299,7 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        40 MB are refused with a message instead of freezing the tab. Only PDF stays open,
        because it is a page rather than a path.
 9. [x] D17 done — `/nastroje/vrstvy` reads a `.gcode` in the browser and scrubs it by layer
-       (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 20 checks). Uses a 2D canvas, not
+       (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 30 checks). Uses a 2D canvas, not
        Three.js: see the deviation recorded in `PLAN.md` D17. Reads `;Layer` / `;LAYER:` /
        `;LAYER_CHANGE` markers; without markers it falls back to rising Z and says so.
        It ships a demo (`public/vrstvy/ukazka.gcode`, 283 KB) sliced by `riplay-slicer` from a

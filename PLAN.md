@@ -345,7 +345,7 @@ with `trimesh.creation.box([30,20,4]).difference(cylinder(radius=3, height=20))`
 it is: real toolpaths, never printed, and written in Klipper's dialect — on LinuxCNC a post would
 have to rewrite it first. A download link ships the same file.
 
-**Verification:** `scripts/verify-gcode.mjs` — 20 checks (`npm run verify:gcode`), including
+**Verification:** `scripts/verify-gcode.mjs` — 30 checks (`npm run verify:gcode`), including
 the three failures above as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
 **Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
@@ -497,6 +497,35 @@ sliced file, then re-reading it, not by reading alone:
    was refused as "truncated". Raised to 1 000 000 lines: what the tool accepts, it reads whole.
 
 Every one of 1–5 and 7 has a test now: `npm run verify:gcode` — 20 checks.
+
+**2026-11-13 · second pass, the G-code reader (fresh eyes, same day).** Read as if someone else
+had written it. Six things were silently wrong and two were dead weight:
+
+1. **G91 was half implemented.** The page said the reader "counts with absolute" while the code
+   applied relative X/Y and absolute Z. G90/G91 now work on every axis, and the warning is gone
+   because there is nothing left to warn about.
+2. **M83 was ignored** along with every other M-code, so a Prusa/Orca-style file reported far too
+   little filament. M82/M83 are handled; switching back to absolute re-establishes the counter
+   from the first value rather than comparing against a stale one.
+3. **G92 was ignored.** After a reset or a tool change the next absolute E was measured from a
+   stale total, adding a huge bogus figure to the filament. Position and counters are now reset.
+4. **Retraction was counted as filament** (`Math.abs` of a negative delta) and drawn as a
+   toolpath — a line where the machine laid nothing, plus every retract/unretract pair counted
+   twice. Only a positive deposit draws and counts now; retracts, unretracts and hops are travel.
+5. **Multiple extruders.** A tool change re-establishes the counter, but the *first* `T` is not a
+   change: a leading `T0` is how single-extruder files open, and treating it as a change dropped
+   the first move of the print.
+6. **U was always filament**, so a file using U as a real fourth axis had axis travel counted as
+   filament. U is filament only when the file writes no E.
+7. **Dead bookkeeping cut:** `moves`, `travelMoves`, `perimeterPaths`, `infillPaths` were counted,
+   never shown, and only kept alive by the verifier. The checks now assert the behaviour through
+   paths and their kinds.
+8. **Page cut:** three branches for the caveat became one `caveatOf()`, three DOM lookups per layer
+   update became one `setText()`, the G91 row left "Co to neumí", and the prose now states what
+   the code does (G90/G91, M82/M83, G92, retractions excluded).
+
+Still approximate, and said so on the page: arcs draw as their endpoint, nothing is simulated, and
+a file without layer markers gets layer boundaries guessed from Z.
 
 **What this review did not cover:** every browser check ran in a hidden preview tab
 (`visibilityState: hidden`), where CSS transitions and timers are throttled. The print stack was

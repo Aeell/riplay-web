@@ -86,7 +86,6 @@ import Icon from '../../components/Icon.astro';
     <div class="bench">
       <div class="bench-row"><b>3D náhled s otáčením</b><span class="svc">pohled</span><span class="state">ne — kreslí se půdorys jedné vrstvy; na „co pojede“ to stačí</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Oblouky G2/G3</b><span class="svc">dráha</span><span class="state">jen koncový bod — nástroj to napíše, nezkreslí</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>Relativní souřadnice G91</b><span class="svc">dráha</span><span class="state">nástroj to řekne; počítá s absolutními</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Simulace stroje</b><span class="svc">čas</span><span class="state">ne — žádné zrychlení, teplota ani tlak</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Soubor nad 40 MB</b><span class="svc">velikost</span><span class="state">odmítne — takový soubor patří do sliceru</span><i class="dot warn"></i></div>
     </div>
@@ -95,8 +94,9 @@ import Icon from '../../components/Icon.astro';
       Náhled čte jen to, co je v souboru: <span class="mono">G0/G1</span>, změny
       <span class="mono">Z</span> a komentáře <span class="mono">;Shell</span> /
       <span class="mono">;Internal Infill</span>. Soubor bez komentářů se vykreslí jednou barvou —
-      hádat, co je obrys, by bylo horší než to nevědět. Extruze se počítá jako ujetá vzdálenost,
-      ať je na <span class="mono">E</span> nebo na <span class="mono">U</span>.
+      hádat, co je obrys, by bylo horší než to nevědět. Rozumí <span class="mono">G90/G91</span>,
+      <span class="mono">M82/M83</span> i <span class="mono">G92</span>; extruzi počítá
+      z přírůstku a retrakci do ní nepočítá.
     </p>
 
     <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">
@@ -129,6 +129,10 @@ import Icon from '../../components/Icon.astro';
 
   // Millimetres are the whole point here: a 108.36 mm part must not read as "108".
   const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : '—');
+  const setText = (id: string, value: string) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = value;
+  };
 
   function draw() {
     if (!canvas || !parsed || !parsed.layers.length) return;
@@ -146,13 +150,20 @@ import Icon from '../../components/Icon.astro';
     index = Math.max(0, Math.min(parsed.layers.length - 1, i));
     if (range) range.value = String(index);
     const layer = parsed.layers[index];
-    const label = $<HTMLElement>('g-layer');
-    const z = $<HTMLElement>('g-z');
-    const paths = $<HTMLElement>('r-paths');
-    if (label) label.textContent = `vrstva ${index + 1} / ${parsed.layers.length}`;
-    if (z) z.textContent = `z ${fmt(layer.z)} mm`;
-    if (paths) paths.textContent = String(layer.paths.length);
+    setText('g-layer', `vrstva ${index + 1} / ${parsed.layers.length}`);
+    setText('g-z', `z ${fmt(layer.z)} mm`);
+    setText('r-paths', String(layer.paths.length));
     draw();
+  }
+
+  /** What the reader could not do with this file, in the reader's own words. */
+  function caveatOf(stats: ReturnType<typeof parseGcode>['stats']) {
+    if (stats.truncated) return 'soubor je moc dlouhý — načtena jen část';
+    if (stats.unsupported.length) return `pozor: ${stats.unsupported.join(' · ')}`;
+    if (stats.layerSource === 'z') {
+      return 'soubor nemá značky vrstev — hranice jsou odhadnuté ze Z, z-hop je může posunout';
+    }
+    return '';
   }
 
   function load(name: string, text: string) {
@@ -169,28 +180,14 @@ import Icon from '../../components/Icon.astro';
     readout?.removeAttribute('hidden');
     hint?.setAttribute('hidden', '');
 
-    const set = (id: string, value: string) => {
-      const el = $<HTMLElement>(id);
-      if (el) el.textContent = value;
-    };
-    set('r-layers', String(result.stats.layers));
-    set('r-extrusion', `${Math.round(result.stats.extrusion).toLocaleString('cs-CZ')} mm`);
-    set('r-bounds', result.bounds ? `${fmt(result.bounds.width)} × ${fmt(result.bounds.height)} mm` : '—');
-    set('r-lines', String(result.stats.lines));
+    setText('r-layers', String(result.stats.layers));
+    setText('r-extrusion', `${Math.round(result.stats.extrusion).toLocaleString('cs-CZ')} mm`);
+    setText('r-bounds', result.bounds ? `${fmt(result.bounds.width)} × ${fmt(result.bounds.height)} mm` : '—');
+    setText('r-lines', String(result.stats.lines));
 
     if (notes) {
-      if (result.stats.truncated) {
-        notes.textContent = 'soubor je moc dlouhý — načtena jen část';
-        notes.removeAttribute('hidden');
-      } else if (result.stats.unsupported.length) {
-        notes.textContent = `pozor: ${result.stats.unsupported.join(' · ')}`;
-        notes.removeAttribute('hidden');
-      } else if (result.stats.layerSource === 'z') {
-        notes.textContent = 'soubor nemá značky vrstev — hranice jsou odhadnuté ze Z, z-hop je může posunout';
-        notes.removeAttribute('hidden');
-      } else {
-        notes.setAttribute('hidden', '');
-      }
+      notes.textContent = caveatOf(result.stats);
+      notes.hidden = !notes.textContent;
     }
 
     if (range) {
