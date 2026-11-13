@@ -40,7 +40,12 @@ To refresh the Google Fonts catalogue (1 request, no key): `npm run fonts:catalo
 
 `npm run verify:all` is the whole check suite: it builds, runs every verifier (including the Pages
 one, for which it starts and stops `wrangler pages dev` itself), and calls Google once for the
-font proxy last, so a flaky third party cannot hide a real failure. GitHub Actions runs the same
+font proxy last, so a flaky third party cannot hide a real failure.
+
+`npm run verify:site` is the one that reads the built site like a browser would: every internal
+link and fragment must resolve inside `dist/`, every page must stay inside its gzip budget
+(measured, with headroom, in the script), and nothing the page loads may come from another origin
+— that last one is the no-CDN, no-analytics rule as a check rather than a promise. GitHub Actions runs the same
 command on every push to master — the Netlify build never ran a verifier, and its deploys are
 paused, so that workflow is what actually enforces these.
 

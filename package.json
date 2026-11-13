@@ -19,7 +19,8 @@
     "verify:seo": "node scripts/verify-seo.mjs",
     "preview:pages": "wrangler pages dev dist --port 8788 --ip 127.0.0.1",
     "verify:pages": "node scripts/verify-pages.mjs",
-    "verify:all": "node scripts/verify-all.mjs"
+    "verify:all": "node scripts/verify-all.mjs",
+    "verify:site": "node scripts/verify-site.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.5",

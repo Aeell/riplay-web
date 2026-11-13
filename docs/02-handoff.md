@@ -254,6 +254,12 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 ### Checks run themselves now (2026-11-13)
 
+`npm run verify:site` reads `dist/` the way a browser would: internal links and fragments resolve,
+each page is inside its gzip budget (7.94 kB home, 5.51 kB part page, everything else ≤ 4.2 kB at
+the time of writing), and nothing the browser loads comes from another origin — the no-CDN rule
+as a check. It caught a canonical on the 404 page pointing at a URL that does not exist. All four
+of its failure modes were proved by injecting faults into `dist/` and watching it go red.
+
 `npm run verify:all` builds and runs every verifier in one command (~10 s), starting and stopping
 the Pages dev server itself for `verify:pages`. `.github/workflows/verify.yml` runs exactly that
 on every push to `master` — Node 22, `npm ci`, one step. This is the only enforcement that exists

@@ -204,6 +204,13 @@ and the file was restored.
 URL, and production deploys are paused (credits). Until this build is live the claim is "valid
 locally", not "passes Rich Results".
 
+**Canonicals are now checked, and one was wrong.** `npm run verify:site` resolves every internal
+reference in the build, including `<link rel="canonical">`. It found that `404.html` carried a
+canonical pointing at `https://riplay.cz/404/` — a URL that does not exist, and a claim that the
+page has an address when the whole point is that it does not. The layout now accepts
+`canonical={null}` and the 404 uses it: no canonical, no `og:url`. Every other page keeps one, and
+the check keeps it that way.
+
 **Done:** Rich Results test passes; Search Console verified.
 
 ### D11 — First commission through the site **[BLOCKED until trade licence]**
