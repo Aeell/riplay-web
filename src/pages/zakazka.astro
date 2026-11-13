@@ -25,7 +25,7 @@ const email = shop.legal.email;
 
     <p class="lead" style="max-width:64ch">
       Nemusíš vědět, jak se to jmenuje ani z čeho to je. Stačí, co to má dělat a kam to má
-      pasovat. Fotky přiložíš v e-mailu. Na server se nic neposílá.
+      pasovat. Fotky se zmenší tady v prohlížeči a přiložíš je v e-mailu. Na server se nic neposílá.
     </p>
 
     <div class="intake">
@@ -65,9 +65,19 @@ const email = shop.legal.email;
           </label>
         </div>
 
+        <label>
+          <span>Fotky <em class="quiet">nepovinné</em></span>
+          <input id="f-fotky" name="fotky" type="file" accept="image/*" multiple />
+        </label>
+        <div class="photos" id="f-fotky-list" aria-live="polite"></div>
+        <p class="hint mono" id="f-fotky-note">
+          Fotky se zmenší na 1600 px a přebalí do JPEG, hned tady v prohlížeči — nic se nenahrává.
+          Prohlížeč je do e-mailu přiložit neumí: stáhneš je jako jeden soubor a přetáhneš do zprávy.
+        </p>
+
         <p class="hint mono">
-          Fotky: přilož je v e-mailu, až se otevře. Rozepsaný text zůstává uložený jen v tomhle
-          prohlížeči, aby se při obnovení stránky nevytratil — nikam se neposílá. „Vymazat“ ho smaže.
+          Rozepsaný text zůstává uložený jen v tomhle prohlížeči, aby se při obnovení stránky
+          nevytratil — nikam se neposílá. „Vymazat“ ho smaže i s fotkami.
         </p>
 
         <div class="actions">
@@ -75,8 +85,35 @@ const email = shop.legal.email;
             Otevřít v e-mailu →
           </a>
           <button class="btn ghost" type="button" id="intake-copy">Kopírovat text</button>
+          <button class="btn ghost" type="button" id="intake-manual-open" aria-expanded="false"
+            aria-controls="intake-manual">E-mail se neotevřel?</button>
           <button class="btn ghost" type="button" id="intake-clear">Vymazat</button>
           <span class="mono dim" id="intake-state" role="status" aria-live="polite"></span>
+        </div>
+
+        <div class="manual" id="intake-manual" hidden>
+          <p class="eyebrow">poslat ručně</p>
+          <p class="manual-line">
+            <span class="mono dim">Komu</span>
+            <b class="mono" id="intake-address">{email}</b>
+            <button class="btn ghost small" type="button" id="intake-copy-address">Kopírovat adresu</button>
+          </p>
+          <p class="manual-line">
+            <span class="mono dim">Předmět</span>
+            <span class="mono" id="intake-subject"></span>
+          </p>
+          <label>
+            <span>Zpráva</span>
+            <textarea id="intake-manual-body" rows="10" readonly></textarea>
+          </label>
+          <div class="actions">
+            <button class="btn ghost" type="button" id="intake-copy-manual">Kopírovat zprávu</button>
+            <a class="btn ghost" id="intake-zip" hidden download="riplay-fotky.zip">Stáhnout fotky (.zip)</a>
+          </div>
+          <p class="hint mono">
+            Zkopíruj zprávu, otevři svou schránku a pošli ji na tuhle adresu. Fotky přilož
+            ze staženého souboru, pokud nějaké máš.
+          </p>
         </div>
       </form>
 
@@ -102,8 +139,30 @@ const email = shop.legal.email;
   const clear = $<HTMLButtonElement>('intake-clear');
   const state = $<HTMLElement>('intake-state');
 
+  const photos = $<HTMLInputElement>('f-fotky');
+  const photoList = $<HTMLElement>('f-fotky-list');
+  const manual = $<HTMLElement>('intake-manual');
+  const manualToggle = $<HTMLButtonElement>('intake-manual-open');
+  const manualBody = $<HTMLTextAreaElement>('intake-manual-body');
+  const manualSubject = $<HTMLElement>('intake-subject');
+  const manualAddress = $<HTMLElement>('intake-address');
+  const zipLink = $<HTMLAnchorElement>('intake-zip');
+  const copyAddress = $<HTMLButtonElement>('intake-copy-address');
+  const copyManual = $<HTMLButtonElement>('intake-copy-manual');
+
   if (form && preview && send) {
     const val = (id: string) => ($<HTMLInputElement>(id)?.value ?? '').trim();
+
+    // 1600 px on the long edge still shows a crack or a thread; 10 MB total is where mail
+    // providers begin refusing the attachment, not where the picture stops being useful.
+    const MAX_EDGE = 1600;
+    const MAX_TOTAL = 10 * 1024 * 1024;
+
+    type Prepared = { name: string; blob: Blob; before: number; changed: boolean; error?: string };
+    let prepared: Prepared[] = [];
+    let zipUrl = '';
+
+    const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} kB`;
 
     const build = () => {
       const lines = [
@@ -123,8 +182,194 @@ const email = shop.legal.email;
       if (termin) lines.push(`Termín: ${termin}`);
       if (jmeno) lines.push('', `Jméno: ${jmeno}`);
       if (kontakt) lines.push(`Kontakt: ${kontakt}`);
-      lines.push('', 'Fotky přikládám v příloze.', '', jmeno || '');
+      const usable = prepared.filter((p) => !p.error);
+      if (usable.length) lines.push('', `Fotky: ${usable.map((p) => p.name).join(', ')} (příloha)`);
+      lines.push('', usable.length ? 'Fotky přikládám v příloze.' : 'Fotky můžu poslat, když bude potřeba.', '', jmeno || '');
       return lines.join('\n');
+    };
+
+    const subjectOf = () => {
+      const co = val('f-co');
+      return `Zakázka z riplay.cz${co ? ` — ${co.split('\n')[0].slice(0, 40)}` : ''}`;
+    };
+
+    const to = () => form.dataset.email ?? '';
+
+    // ── photos ────────────────────────────────────────────────────────────────────────────
+
+    /** Re-encodes to JPEG at MAX_EDGE unless the file is already small in pixels *and* bytes. */
+    const shrink = async (file: File, index: number): Promise<Prepared> => {
+      const name = `fotka-${index + 1}.jpg`;
+      try {
+        const bitmap = await createImageBitmap(file);
+        const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+        if (scale === 1 && file.size <= 500_000) {
+          bitmap.close?.();
+          return { name: `fotka-${index + 1}.${(file.name.split('.').pop() ?? 'jpg').toLowerCase()}`, blob: file, before: file.size, changed: false };
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+        canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close?.();
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+        if (!blob) return { name, blob: file, before: file.size, changed: false };
+        return { name, blob, before: file.size, changed: true };
+      } catch {
+        // HEIC and anything the browser cannot decode: say so, keep the name, do not pretend.
+        return { name: file.name, blob: file, before: file.size, changed: false, error: 'prohlížeč tenhle formát nepřečte' };
+      }
+    };
+
+    // A ZIP writer with no dependency and no compression: the entries are already JPEGs, so
+    // deflating them again saves about one percent and costs a code path that can be wrong.
+    const CRC_TABLE = (() => {
+      const table = new Uint32Array(256);
+      for (let i = 0; i < 256; i += 1) {
+        let c = i;
+        for (let k = 0; k < 8; k += 1) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+        table[i] = c >>> 0;
+      }
+      return table;
+    })();
+
+    const crc32 = (bytes: Uint8Array) => {
+      let c = 0xffffffff;
+      for (let i = 0; i < bytes.length; i += 1) c = CRC_TABLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+      return (c ^ 0xffffffff) >>> 0;
+    };
+
+    const zipStore = (files: { name: string; bytes: Uint8Array }[]): Blob => {
+      const encoder = new TextEncoder();
+      const now = new Date();
+      const time = (now.getHours() << 11) | (now.getMinutes() << 5) | Math.floor(now.getSeconds() / 2);
+      const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+      const u16 = (v: number) => [v & 0xff, (v >>> 8) & 0xff];
+      const u32 = (v: number) => [v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff];
+      const parts: BlobPart[] = [];
+      const central: Uint8Array[] = [];
+      let offset = 0;
+
+      for (const file of files) {
+        const name = encoder.encode(file.name);
+        const crc = crc32(file.bytes);
+        const size = file.bytes.length;
+        const local = new Uint8Array([
+          0x50, 0x4b, 0x03, 0x04, 20, 0, 0, 0, 0, 0, ...u16(time), ...u16(date),
+          ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length), 0, 0, ...name,
+        ]);
+        parts.push(local, file.bytes);
+        central.push(new Uint8Array([
+          0x50, 0x4b, 0x01, 0x02, 20, 0, 20, 0, 0, 0, 0, 0, ...u16(time), ...u16(date),
+          ...u32(crc), ...u32(size), ...u32(size), ...u16(name.length),
+          0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ...u32(offset), ...name,
+        ]));
+        offset += local.length + size;
+      }
+
+      const centralSize = central.reduce((sum, chunk) => sum + chunk.length, 0);
+      const end = new Uint8Array([
+        0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0,
+        ...u16(files.length), ...u16(files.length),
+        ...u32(centralSize), ...u32(offset), 0, 0,
+      ]);
+      return new Blob([...parts, ...central, end], { type: 'application/zip' });
+    };
+
+    const renderPhotos = async () => {
+      if (!photoList) return;
+      photoList.textContent = '';
+
+      const usable = prepared.filter((p) => !p.error);
+      const total = usable.reduce((sum, p) => sum + p.blob.size, 0);
+
+      for (const item of prepared) {
+        const row = document.createElement('p');
+        row.className = 'photo';
+        const name = document.createElement('b');
+        name.className = 'mono';
+        name.textContent = item.name;
+        const size = document.createElement('span');
+        size.className = 'mono dim';
+        size.textContent = item.error
+          ? item.error
+          : item.changed
+            ? `${kb(item.before)} → ${kb(item.blob.size)}`
+            : `${kb(item.blob.size)}, beze změny`;
+        row.append(name, size);
+        photoList.append(row);
+      }
+
+      if (prepared.length) {
+        const sum = document.createElement('p');
+        sum.className = 'photo-total mono dim';
+        sum.textContent = `celkem ${kb(total)}${total > MAX_TOTAL ? ' — nad 10 MB, e-mail to nemusí přijmout' : ''}`;
+        photoList.append(sum);
+      }
+
+      // One file to drag into the mail, not eight downloads.
+      if (zipUrl) URL.revokeObjectURL(zipUrl);
+      zipUrl = '';
+      if (usable.length && zipLink) {
+        const files = await Promise.all(usable.map(async (item) => ({
+          name: item.name,
+          bytes: new Uint8Array(await item.blob.arrayBuffer()),
+        })));
+        zipUrl = URL.createObjectURL(zipStore(files));
+        zipLink.href = zipUrl;
+        zipLink.hidden = false;
+        zipLink.textContent = usable.length > 1 ? `Stáhnout fotky (.zip, ${usable.length})` : 'Stáhnout fotku';
+      } else if (zipLink) {
+        zipLink.hidden = true;
+        zipLink.removeAttribute('href');
+      }
+    };
+
+    // Eight photos is already more than a bracket needs; sixty is a phone camera roll and a
+    // canvas per file. The rest are named, not silently dropped.
+    const MAX_PHOTOS = 8;
+
+    photos?.addEventListener('change', async () => {
+      const all = Array.from(photos.files ?? []);
+      const files = all.slice(0, MAX_PHOTOS);
+      if (!files.length) {
+        prepared = [];
+        await renderPhotos();
+        return;
+      }
+      if (state) state.textContent = 'zmenšuji fotky…';
+      prepared = await Promise.all(files.map((file, index) => shrink(file, index)));
+      await renderPhotos();
+      if (state) state.textContent = all.length > MAX_PHOTOS ? `beru prvních ${MAX_PHOTOS} fotek` : '';
+    });
+
+    // ── the message ──────────────────────────────────────────────────────────────────────
+
+    const paint = () => {
+      const body = build();
+      const subject = subjectOf();
+      const href = `mailto:${to()}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      preview.textContent = `Komu: ${to()}\nPředmět: ${subject}\n\n${body}`;
+      send.href = href;
+      if (manualBody) manualBody.value = body;
+      if (manualSubject) manualSubject.textContent = subject;
+      if (manualAddress) manualAddress.textContent = to();
+
+      // mailto URLs get truncated by some clients somewhere around 2 000 characters.
+      if (href.length > 1800) {
+        if (state) state.textContent = 'zpráva je dlouhá — použij „Kopírovat text“';
+      } else if (state && state.textContent.startsWith('zpráva je dlouhá')) {
+        state.textContent = '';
+      }
+
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          'f-co': val('f-co'), 'f-kam': val('f-kam'), 'f-material': val('f-material'),
+          'f-termin': val('f-termin'), 'f-jmeno': val('f-jmeno'), 'f-kontakt': val('f-kontakt'),
+        }));
+      } catch {
+        /* ignore */
+      }
     };
 
     // Unsaved work is the one thing a mailto form can lose, so it survives a reload.
@@ -139,29 +384,48 @@ const email = shop.legal.email;
       /* a broken or blocked storage must never stop the form working */
     }
 
-    const paint = () => {
-      const body = build();
-      const co = val('f-co');
-      const subject = `Zakázka z riplay.cz${co ? ` — ${co.split('\n')[0].slice(0, 40)}` : ''}`;
-      const to = form.dataset.email ?? '';
-      const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      preview.textContent = `Komu: ${to}\nPředmět: ${subject}\n\n${body}`;
-      send.href = href;
+    // ── when the mail client does not open ───────────────────────────────────────────────
 
-      // mailto URLs get truncated by some clients somewhere around 2 000 characters.
-      if (href.length > 1800) {
-        if (state) state.textContent = 'zpráva je dlouhá — použij „Kopírovat text“';
-      } else if (state) {
-        state.textContent = '';
-      }
+    const showManual = (open: boolean, note?: string) => {
+      if (!manual || !manualToggle) return;
+      manual.hidden = !open;
+      manualToggle.setAttribute('aria-expanded', String(open));
+      if (open && note && state) state.textContent = note;
+    };
 
+    manualToggle?.addEventListener('click', () => showManual(manual?.hidden ?? true));
+
+    // A mailto that opens a client takes the focus away; one that does nothing leaves the page
+    // focused. If nothing has happened after 1.5 s, the fallback is what the sender needs.
+    send.addEventListener('click', () => {
+      let handedOff = false;
+      const onBlur = () => { handedOff = true; };
+      window.addEventListener('blur', onBlur, { once: true });
+      window.setTimeout(() => {
+        window.removeEventListener('blur', onBlur);
+        if (!handedOff) showManual(true, 'e-mail se neotevřel — zkopíruj zprávu níž');
+      }, 1500);
+    });
+
+    // Clipboard access is a permission, not a promise. When it is refused, the fallback is not a
+    // message telling the sender where to look: it is the text, selected, under their cursor.
+    const writeClipboard = async (text: string, done: string, target?: HTMLElement | HTMLTextAreaElement | null) => {
       try {
-        localStorage.setItem(KEY, JSON.stringify({
-          'f-co': val('f-co'), 'f-kam': val('f-kam'), 'f-material': val('f-material'),
-          'f-termin': val('f-termin'), 'f-jmeno': val('f-jmeno'), 'f-kontakt': val('f-kontakt'),
-        }));
+        await navigator.clipboard.writeText(text);
+        if (state) state.textContent = done;
       } catch {
-        /* ignore */
+        showManual(true);
+        if (target instanceof HTMLTextAreaElement) {
+          target.focus();
+          target.select();
+        } else if (target) {
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          const selection = window.getSelection();
+          selection?.removeAllRanges();
+          selection?.addRange(range);
+        }
+        if (state) state.textContent = 'kopírování nedovoleno — text je vybraný, stiskni Ctrl+C';
       }
     };
 
@@ -173,6 +437,9 @@ const email = shop.legal.email;
       for (const el of Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea'))) {
         el.value = '';
       }
+      if (photos) photos.value = '';
+      prepared = [];
+      void renderPhotos();
       paint();
       // paint() re-saves the (now empty) draft, so the key is removed after it runs.
       try {
@@ -180,17 +447,13 @@ const email = shop.legal.email;
       } catch {
         /* nothing to remove if storage is blocked */
       }
+      showManual(false);
       if (state) state.textContent = 'vymazáno z prohlížeče';
     });
 
-    copy?.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(build());
-        if (state) state.textContent = 'zkopírováno';
-      } catch {
-        if (state) state.textContent = 'kopírování nedovoleno — vyber text v náhledu';
-      }
-    });
+    copy?.addEventListener('click', () => writeClipboard(build(), 'zkopírováno', manualBody));
+    copyManual?.addEventListener('click', () => writeClipboard(build(), 'zpráva zkopírována', manualBody));
+    copyAddress?.addEventListener('click', () => writeClipboard(to(), 'adresa zkopírována', manualAddress));
   }
 </script>
 
@@ -239,6 +502,9 @@ const email = shop.legal.email;
     font-style: normal;
     color: var(--accent);
   }
+  label em.quiet {
+    color: var(--dimmer);
+  }
 
   input,
   textarea {
@@ -260,11 +526,48 @@ const email = shop.legal.email;
   textarea::placeholder {
     color: var(--dimmer);
   }
+  input[type='file'] {
+    padding: 9px 12px;
+    font-size: 12px;
+    color: var(--dim);
+  }
+  textarea[readonly] {
+    background: var(--panel);
+    color: #c9c7c2;
+    font-size: 12.5px;
+    line-height: 1.6;
+    resize: vertical;
+  }
 
   .hint {
     font-size: 11px;
     color: var(--dim);
     margin: 0;
+  }
+
+  .photos {
+    display: grid;
+    gap: 4px;
+  }
+  .photos:empty {
+    display: none;
+  }
+  .photo {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0;
+    font-size: 11.5px;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 4px;
+  }
+  .photo b {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .photo-total {
+    margin: 2px 0 0;
+    font-size: 11px;
   }
 
   .actions {
@@ -284,6 +587,38 @@ const email = shop.legal.email;
   }
   .btn.ghost:hover {
     border-color: var(--accent);
+  }
+  .btn.ghost.small {
+    padding: 5px 9px;
+    font-size: 11px;
+  }
+  .btn[hidden] {
+    display: none;
+  }
+
+  /* The fallback is a real panel, not a toast: it holds the message and the address. */
+  .manual {
+    display: grid;
+    gap: 12px;
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--accent);
+    background: var(--panel);
+    padding: 18px;
+  }
+  .manual[hidden] {
+    display: none;
+  }
+  .manual-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    font-size: 12px;
+  }
+  .manual-line b {
+    font-weight: 500;
+    color: var(--ink);
   }
 
   .preview {

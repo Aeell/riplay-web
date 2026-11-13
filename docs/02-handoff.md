@@ -344,6 +344,10 @@ throws on the first failure and prints the diff-ready message.
        regenerate that sample from the printed part and drop the sample badge. D17/D18 review
        findings are in `PLAN.md` § Review log.
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
+       The page around it has been made survivable (`PLAN.md` D4: in-browser photo compression,
+       one ZIP to attach, a manual panel with address + message + copy, and copy-refused
+       fallback), but **arrival is still unproven**: send one real commission and watch it land.
+
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).
 10. [x] `docs/research-slicer-fork.md` (2026-11-12) — fork research for the future

@@ -111,8 +111,31 @@ what it is, and a **Vymazat** button erases it. Storing something while claiming
 nothing would have been a lie on the one page that asks strangers for their photos. WhatsApp is omitted rather than faked —
 there is no published phone number, and inventing one would break the constitution. The
 homepage CTA and the nav now point at the page instead of at an anchor.
+**Photos, and the mail client that does not open (2026-11-13).** The page used to say "attach the
+photos in the mail app" and leave it there. Three things now stand between a stranger and a lost
+commission:
+
+1. **The photos are compressed before anything else happens.** A picker takes up to 8 images,
+   re-encodes each to JPEG at 1600 px on the long edge unless it is already small, and shows the
+   before/after size — measured 1.2 MB → 80 kB and 1.4 MB → 82 kB on 3000×2000 test images.
+   A file the browser cannot decode (HEIC is the usual one) is named as unreadable instead of
+   silently dropped, and the total is shown against a 10 MB limit.
+2. **One file to attach, not eight downloads.** The prepared photos are packed into a ZIP in the
+   browser — store-only, no dependency, because the entries are already JPEGs. Verified as a real
+   archive with `unzip -t` and Python's `zipfile` (CRC OK, PNG/JPEG bytes intact), not just by
+   looking at the header.
+3. **The fallback is a panel, not an apology.** A `mailto:` that opens nothing leaves the page
+   focused; after 1.5 s the form reveals the address, the subject, the full message in a readonly
+   box, copy buttons for the message and the address, and the photo download. It is also reachable
+   on demand ("E-mail se neotevřel?"). When the clipboard itself is refused, the panel opens and
+   the text is selected, so the fallback is Ctrl+C rather than an instruction to go looking.
+
+What is still true: nothing is uploaded, the browser cannot attach files to a `mailto:`, and the
+message can only leave from the sender's own mailbox.
+
 **Done:** submit a test commission from a phone; it arrives where you actually read.
-**Blocked:** the second half needs a readable inbox, which is D3b.
+**Blocked:** the second half needs a readable inbox, which is D3b. The photo path and the manual
+fallback are verified in a browser; the arrival is not, and cannot be until D3b.
 
 ---
 
