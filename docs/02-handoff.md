@@ -244,6 +244,17 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        Meanwhile: batch work into a single deploy, and use `npm run preview:full` as the
        review loop — it costs nothing.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
+4. [x] Review of the D2/D14 routes (2026-11-13) — three defects, all fixed in `de20234`:
+       (a) the episode route and the index each decided "is this live" separately, so a row could
+       link to a page that was never generated; there is now one predicate, `isLive()` in
+       `src/lib/episodes.ts` (published + dated + non-empty body), used by both; (b) the schema
+       refuses a published episode without a date, because every page here states "stav k";
+       (c) `.prose` was copy-pasted into both article pages and had already drifted — it is one
+       block in `global.css` now. Proven by negative tests: published-without-date fails the
+       build (*"publikovaná epizoda musí mít datum"*), published-with-date-but-empty produces no
+       page and lists as "připravujeme". The first two attempts at that second test failed on a
+       malformed fixture (YAML colon), which proves nothing — the fixture was fixed before the
+       result was believed.
 4. [x] D14 published (2026-11-13) — `/denik/ep-00/` ("Proč pětioska") plus `/denik/` index.
        Only episodes with `status: published` get a URL; planned ones are listed and unlinked,
        so no page exists that promises content. Episode copy cites only what the repo can prove.

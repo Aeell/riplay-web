@@ -264,6 +264,11 @@ and leaves EP 01 unlinked until it exists; `/denik/` lists both and links only t
 **Note:** the summary on the homepage still says "co shořelo" from the earlier draft; the episode
 body says what actually happened. Tighten that phrase when the next episode is written.
 
+**Review (2026-11-13):** the routes were re-read with fresh eyes and three defects fixed — one
+definition of a live episode shared by index and route (`isLive()`), a schema rule that makes a
+published episode without a date a build failure, and one `.prose` block in `global.css` instead of
+two divergent copies. The guarantee is now testable, and was tested by trying to break it.
+
 ### D15 — Slicer repo **[SHIP]**
 `riplay-slicer` public: README with an honest status line, license decision, short
 architecture note, CI running the test suite. The repo **name** keeps the word "slicer"
