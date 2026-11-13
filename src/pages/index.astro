@@ -5,6 +5,7 @@ import Replay from '../components/Replay.astro';
 import Iso from '../components/Iso.astro';
 import Icon from '../components/Icon.astro';
 import { shop } from '../data/shop';
+import { localBusiness, webSite } from '../lib/seo';
 
 // presentation only — the data layer stays free of drawing decisions
 const serviceIcon = { '01': 'cad', '02': 'cnc', '03': 'print' } as const;
@@ -13,7 +14,7 @@ const serviceIcon = { '01': 'cad', '02': 'cnc', '03': 'print' } as const;
 const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.localeCompare(b.data.n));
 ---
 
-<Base>
+<Base schema={[webSite(), localBusiness()]}>
   <section class="hero wrap">
     <div class="hero-grid">
       <div>

@@ -1,11 +1,13 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import { webApplication } from '../../lib/seo';
 ---
 
 <Base
-  title="Nástroje — převod souborů | Riplay"
-  description="STL, OBJ, PLY, GLB mezi sebou a SVG ↔ DXF v milimetrech, v prohlížeči. Přetáhni soubor a stáhni ho v jiném formátu, nic se nenahrává."
+  title="Převod STL na DXF a SVG ↔ DXF — zdarma | Riplay"
+  description="STL, OBJ, PLY, GLB a SVG ↔ DXF v milimetrech, přímo v prohlížeči. Přetáhni soubor a stáhni ho v jiném formátu, nic se nenahrává."
+  schema={[webApplication('Převod 3D a 2D souborů', 'Převod STL, OBJ, PLY a GLB mezi sebou a SVG ↔ DXF v milimetrech, v prohlížeči.', '/nastroje/prevod/')]}
 >
   <section class="hero wrap">
     <p class="eyebrow">08 — nástroje · soubory</p>

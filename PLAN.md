@@ -118,10 +118,41 @@ to the listings and the listings link to the site — that mutual reference is w
 search actually reads.
 **Done:** both listings claimed, facts identical to the site, cross-linked both ways.
 
-### D10 — CZ search basics
+### D10 — CZ search basics — **built 2026-11-13**, the done test needs a live site
 Titles/headings/description per page, `LocalBusiness` + `Product`/`Service` schema,
 sitemap, robots, canonical. Target real phrases ("3D tisk na zakázku", "frézování
 hliníku", "náhradní díl do auta na míru").
+
+**What shipped:**
+
+- **Titles lead with what people type, not with the brand.** The home title is now
+  "CNC frézování a 3D tisk na zakázku — Riplay"; the intake page targets "náhradní díl na míru";
+  the three tools are titled by their query ("Písmo na DXF a SVG zdarma", "Převod STL na DXF a
+  SVG ↔ DXF", "G-code viewer — náhled po vrstvách"). Every description is 70–170 characters and
+  says what the page does, in the words the page itself uses.
+- **Structured data built from the same facts the page shows** (`src/lib/seo.ts`): `LocalBusiness`
+  with the real address, e-mail and an `OfferCatalog` of the three services; `WebSite`;
+  `WebApplication` per free tool (price 0, because that is what the page says); `BlogPosting` per
+  published episode. Fields the site does not have — phone, opening hours, IČO, prices, ratings —
+  are **omitted by construction**: there is no code path that could invent them, and a check
+  asserts they stay absent.
+- **Sitemap** from `@astrojs/sitemap` with a `serialize` that appends the trailing slash the host
+  actually serves, so it agrees with the canonicals instead of sending a crawler through a redirect
+  per page. It enumerates built pages, so a new page cannot silently fall out of it.
+- **`robots.txt`** allows everything (nothing here is hidden) and names the sitemap index.
+- **Canonicals** already existed and were already right (they come from the URL that returns 200);
+  `og:url` and `og:site_name` now sit beside them.
+
+**Verification:** `npm run verify:seo` reads `dist/`, not the source — 69 checks: title presence,
+length and uniqueness, description lengths, absolute slash-terminated canonicals, JSON-LD parsing
+plus required fields per type, the no-invented-fields guarantee, sitemap ↔ built pages in both
+directions, robots → sitemap. Proved able to fail: one title shortened in `dist` produced a FAIL,
+and the file was restored.
+
+**Not done, honestly blocked:** Google's Rich Results test and Search Console both need the public
+URL, and production deploys are paused (credits). Until this build is live the claim is "valid
+locally", not "passes Rich Results".
+
 **Done:** Rich Results test passes; Search Console verified.
 
 ### D11 — First commission through the site **[BLOCKED until trade licence]**

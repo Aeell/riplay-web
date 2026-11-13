@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import { isLive } from '../../lib/episodes';
+import { blogPosting } from '../../lib/seo';
 
 // Only episodes the index also treats as live get a URL, so no page can exist that promises
 // content it does not have.
@@ -16,7 +17,18 @@ const d = episode.data;
 const stamp = d.date?.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' });
 ---
 
-<Base title={`${d.n} — ${d.title} · Riplay`} description={d.summary}>
+<Base
+  title={`${d.n} — ${d.title} · Riplay`}
+  description={d.summary}
+  schema={[
+    blogPosting({
+      headline: `${d.n} — ${d.title}`,
+      description: d.summary,
+      datePublished: d.date.toISOString().slice(0, 10),
+      path: `/denik/${episode.id}/`,
+    }),
+  ]}
+>
   <section class="sheet wrap">
     <div class="sheet-head">
       <div>

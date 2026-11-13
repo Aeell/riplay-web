@@ -1,11 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import Icon from '../components/Icon.astro';
+import { webApplication } from '../lib/seo';
 ---
 
 <Base
-  title="Nástroje — písmo na dráhu | Riplay"
-  description="Celý Google Fonts bez klíče: napiš text, vyber písmo a stáhni obrysy v milimetrech jako SVG nebo DXF. Počítá se v prohlížeči, text nikam neodejde."
+  title="Písmo na DXF a SVG zdarma — text do dráhy | Riplay"
+  description="Napiš text, vyber písmo z celého Google Fonts a stáhni obrysy v milimetrech jako SVG nebo DXF. Bez registrace, text nikam neodejde."
+  schema={[webApplication('Písmo na DXF a SVG', 'Text na obrysy v milimetrech pro CAM: celý Google Fonts, export SVG a DXF, počítáno v prohlížeči.', '/nastroje/')]}
 >
   <section class="hero wrap">
     <p class="eyebrow">07 — nástroje · písmo</p>

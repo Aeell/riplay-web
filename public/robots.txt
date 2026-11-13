@@ -1,0 +1,5 @@
+# Riplay — everything here is meant to be read.
+User-agent: *
+Allow: /
+
+Sitemap: https://riplay.cz/sitemap-index.xml

@@ -2,11 +2,13 @@
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
 import ToolpathViewer from '../../components/ToolpathViewer.astro';
+import { webApplication } from '../../lib/seo';
 ---
 
 <Base
-  title="Nástroje — G-code po vrstvách | Riplay"
-  description="Otevři .gcode a přejížděj vrstvy. Uvidíš, co stroj opravdu pojede — obrysy a výplň, v milimetrech, bez nahrávání na server."
+  title="G-code viewer — náhled po vrstvách zdarma | Riplay"
+  description="Otevři .gcode a přejížděj vrstvy: obrysy, výplň, rozměry a množství filamentu. Soubor se nikam nenahrává, čte se v prohlížeči."
+  schema={[webApplication('G-code viewer', 'Náhled G-code po vrstvách: obrysy, výplň, rozměry a filament. Soubor se čte v prohlížeči.', '/nastroje/vrstvy/')]}
 >
   <section class="hero wrap">
     <p class="eyebrow">09 — nástroje · g-code</p>

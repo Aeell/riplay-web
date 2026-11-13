@@ -12,7 +12,7 @@ Read this first, then `docs/00-concept.md` (the rules) and `PLAN.md` (the sessio
 | Source | `github.com/Aeell/riplay-web` — **public**, branch `master` |
 | Local path | `~/Projects/riplay` |
 | Astro | 5.18.2 (a v7 exists; deliberately not migrating) |
-| Build | `npm run build` → `dist/` — eleven routes, no webfonts blocking text |
+| Build | `npm run build` → `dist/` — eleven routes, no webfonts blocking text; sitemap + robots generated |
 | **Live** | **https://riplay.cz** — site `f3abf7bc-b006-4cc4-a72a-8e3832df1c2d`, default URL `comforting-vacherin-7e37c5.netlify.app` |
 | Custom domain | `riplay.cz` — **live since 2026-11-11**, Let's Encrypt covering apex + `www`, records in §2 |
 | Deploy method | git-linked → `Aeell/riplay-web` `master`. **Paused 2026-11-13: the 300 free credits are spent, so production deploys are refused** — the hook is fine. See §5 and `DEPLOY.md` |
@@ -120,6 +120,18 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   CNC↔5-axis seam, M100–M199 process layer, sim-first development order).
 
 ---
+
+- **Search-facing text leads with the query, not the brand (2026-11-13, D10).** Nobody searches
+  for "Riplay"; they search "3D tisk na zakázku" or "gcode viewer". Titles now start with the
+  phrase and end with the name, and every description is 70–170 characters. The brand is still
+  first everywhere the *reader* is — headings and body copy did not change.
+- **Schema carries only facts the page carries (2026-11-13, D10).** `src/lib/seo.ts` builds
+  JSON-LD from `shop.ts`, so there is no phone, no opening hours, no IČO, no price and no rating
+  to be filled in with a guess; `npm run verify:seo` fails if any of those appear. A rich result
+  that knows more than the page is the same lie the constitution forbids, in a machine's voice.
+- **The sitemap is generated, never hand-kept (2026-11-13, D10).** A hand-written route list is a
+  second copy of the router that drifts silently; `@astrojs/sitemap` walks what was built, and the
+  `serialize` makes its URLs end the way the canonicals do.
 
 ## 4. The old site, and what is salvaged from it
 
@@ -323,6 +335,11 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        `~/Projects/riplay-slicer` (branch `riplay-spine`), headless `cli.py` slices a box
        to gcode. Scope decision in handoff §3: "slicer" is the public word, the build is a
        5-axis 3D printing solution. D2 is still the next content session.
+11. [~] D10 built — per-page Czech titles/descriptions aimed at real queries, JSON-LD from
+       `src/lib/seo.ts` (LocalBusiness + WebSite + WebApplication + BlogPosting, with no invented
+       phone/hours/price/rating), sitemap via `@astrojs/sitemap` (slash-matched to the canonicals),
+       `public/robots.txt`, `og:url`. `npm run verify:seo` checks the **built** HTML (69 checks).
+       Rich Results + Search Console still need a live deploy — blocked by the Netlify credits.
 
 ---
 

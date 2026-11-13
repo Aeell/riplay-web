@@ -10,11 +10,13 @@ const stamp = new Intl.DateTimeFormat('cs-CZ', {
 }).format(new Date());
 
 // Every page carries its own title/description; the home page values are the
-// defaults so a new page cannot silently inherit the wrong one.
-type Props = { title?: string; description?: string };
+// defaults so a new page cannot silently inherit the wrong one. The default title leads with
+// what someone actually types ("3D tisk na zakázku"), not with the brand they have never heard.
+type Props = { title?: string; description?: string; schema?: Record<string, unknown>[] };
 const {
-  title = 'Riplay — dílna, kterou si můžeš přehrát',
-  description = 'Jeden člověk, CAD, CNC frézování a 3D tisk. Díly na míru, které se nedají koupit — a u každého je vidět, jak vznikl.',
+  title = 'CNC frézování a 3D tisk na zakázku — Riplay',
+  description = 'Jednočlenná dílna v Liberci: náhradní díly a součásti na míru. CAD, CNC frézování, 3D tisk — a u každého dílu je vidět, jak vznikl.',
+  schema = [],
 } = Astro.props;
 // The static build writes directories, so Netlify answers /archiv with a 301 to
 // /archiv/. A canonical that points at the redirecting URL is worse than none, so it
@@ -39,10 +41,17 @@ const canonical = new URL(route, Astro.site).href;
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Riplay — dílna, kterou si můžeš přehrát" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="Riplay" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/mark.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {
+      schema.map((node) => (
+        <script type="application/ld+json" is:inline set:html={JSON.stringify(node)} />
+      ))
+    }
   </head>
   <body>
     <header class="top">

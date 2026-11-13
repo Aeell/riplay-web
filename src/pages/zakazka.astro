@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { shop } from '../data/shop';
+import { localBusiness } from '../lib/seo';
 
 // D4. There is no backend on purpose: the form stores and uploads nothing, it only
 // assembles a message the sender's own mail app opens with their photos attached.
@@ -9,8 +10,9 @@ const email = shop.legal.email;
 ---
 
 <Base
-  title="Zadat dílo — Riplay"
-  description="Pošli fotku a pár vět. Formulář nic nenahrává ani neukládá — sestaví zprávu, kterou odešleš ze svého e-mailu i s fotkami."
+  title="Zadat dílo — náhradní díl na míru | Riplay"
+  description="Pošli fotku rozbitého dílu a pár vět. Formulář nic nenahrává ani neukládá — sestaví zprávu s fotkou, kterou odešleš ze svého e-mailu."
+  schema={[localBusiness()]}
 >
   <section class="sheet wrap">
     <div class="sheet-head">

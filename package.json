@@ -15,9 +15,11 @@
     "verify:paths": "node scripts/verify-paths2d.mjs",
     "verify:proxy": "node scripts/verify-proxy.mjs",
     "verify:gcode": "node scripts/verify-gcode.mjs",
-    "sample:replay": "node scripts/build-replay-sample.mjs"
+    "sample:replay": "node scripts/build-replay-sample.mjs",
+    "verify:seo": "node scripts/verify-seo.mjs"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.5",
     "astro": "^5.0.0",
     "opentype.js": "^2.0.0",
     "sharp": "^0.35.5"
