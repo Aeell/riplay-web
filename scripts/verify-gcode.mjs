@@ -1,7 +1,7 @@
 // Verifies the G-code reader on hand-written files whose every number is known.
 // Run: npm run verify:gcode
 
-import { parseGcode } from '../src/lib/gcode.mjs';
+import { ARC_TOLERANCE_MM, parseGcode } from '../src/lib/gcode.mjs';
 
 let failures = 0;
 const check = (name, condition, detail = '') => {
@@ -87,9 +87,91 @@ const fourthAxis = parseGcode(['G1 X5 Y0 E1 U50', 'G1 X5 Y5 E2 U60'].join('\n'))
 check('U is a fourth axis when the file also uses E', Math.abs(fourthAxis.stats.extrusion - 2) < 1e-9,
   `${fourthAxis.stats.extrusion}`);
 
-// ---------------------------------------------------------------- arcs and markers
-const arcs = parseGcode(['G1 X1 Y1 E0.1', 'G2 X5 Y5 I2 J0 E0.2'].join('\n'));
-check('G2 is counted and reported', arcs.stats.arcs === 1 && arcs.stats.unsupported.some((u) => u.startsWith('G2')));
+// ---------------------------------------------------------------- arcs, planes, units
+const sagitta = (pts, cu, cv) => {
+  let worst = 0;
+  for (let i = 0; i < pts.length - 1; i += 1) {
+    const mx = (pts[i].x + pts[i + 1].x) / 2;
+    const my = (pts[i].y + pts[i + 1].y) / 2;
+    const r = Math.hypot(pts[i].x - cu, pts[i].y - cv);
+    worst = Math.max(worst, r - Math.hypot(mx - cu, my - cv));
+  }
+  return worst;
+};
+
+// Quarter circle, radius 10, centre at the origin, CCW from (10,0) to (0,10).
+const quarter = parseGcode(['G0 X10 Y0 Z0.2', 'G3 X0 Y10 I-10 J0 E1'].join('\n'));
+const qPts = quarter.layers[0]?.paths[0]?.pts ?? [];
+check('G3 is drawn as a curve, not as its chord', qPts.length > 5, `${qPts.length} points`);
+check('every arc point sits on the circle it names',
+  qPts.length > 2 && qPts.every((p) => Math.abs(Math.hypot(p.x, p.y) - 10) < 1e-6),
+  qPts.slice(0, 3).map((p) => Math.hypot(p.x, p.y).toFixed(4)).join(' '));
+check('no chord is further from the arc than the stated tolerance',
+  sagitta(qPts, 0, 0) <= ARC_TOLERANCE_MM + 1e-9, `${sagitta(qPts, 0, 0).toFixed(5)} mm`);
+check('the arc goes through the quarter point, not around it',
+  Math.min(...qPts.map((p) => Math.hypot(p.x - 10 / Math.sqrt(2), p.y - 10 / Math.sqrt(2)))) < 0.8,
+  `${Math.min(...qPts.map((p) => Math.hypot(p.x - 10 / Math.sqrt(2), p.y - 10 / Math.sqrt(2)))).toFixed(3)} mm from 45°`);
+check('the arc ends exactly where the file says', qPts.at(-1)?.x === 0 && qPts.at(-1)?.y === 10,
+  JSON.stringify(qPts.at(-1)));
+check('bounds follow the drawn arc', quarter.bounds?.width === 10 && quarter.bounds?.height === 10,
+  `${quarter.bounds?.width} × ${quarter.bounds?.height}`);
+check('G2/G3 is no longer reported as lossy', !quarter.stats.unsupported.some((u) => u.startsWith('G2/G3 je')));
+check('the tolerance is on the stats', quarter.stats.arcTolerance === ARC_TOLERANCE_MM, `${quarter.stats.arcTolerance}`);
+
+// Full circle: start == end, centre from I/J.
+const circle = parseGcode(['G2 I5 J0 E1'].join('\n'));
+check('a full circle closes on itself',
+  Math.abs(circle.bounds.width - 10) < 1e-6 && Math.abs(circle.bounds.height - 10) < 1e-6
+  && circle.bounds.minY < -4.99, `${circle.bounds.width} × ${circle.bounds.height}, minY ${circle.bounds.minY}`);
+
+// R form: positive is the minor arc, negative the major one. Chord 10, R 6 → the minor arc rises
+// R−√(R²−(chord/2)²) = 2.683 above the chord, the major one 9.317.
+const SAGITTA_MINOR = 6 - Math.sqrt(36 - 25);
+const SAGITTA_MAJOR = 6 + Math.sqrt(36 - 25);
+const minor = parseGcode(['G3 X10 Y0 R6 E1'].join('\n'));
+check('R>0 is the minor arc', Math.abs(minor.bounds.height - SAGITTA_MINOR) < 0.05,
+  `height ${minor.bounds.height.toFixed(3)} mm, expected ${SAGITTA_MINOR.toFixed(3)}`);
+const major = parseGcode(['G3 X10 Y0 R-6 E1'].join('\n'));
+check('R<0 is the major arc', Math.abs(major.bounds.height - SAGITTA_MAJOR) < 0.05,
+  `height ${major.bounds.height.toFixed(3)} mm, expected ${SAGITTA_MAJOR.toFixed(3)}`);
+const impossible = parseGcode(['G3 X10 Y0 R2 E1'].join('\n'));
+check('an R shorter than the chord is a line, and says so',
+  impossible.layers[0]?.paths[0]?.pts.length === 2
+  && impossible.stats.unsupported.some((u) => u.includes('bez středu')), `${impossible.layers[0]?.paths[0]?.pts.length} pts`);
+
+// Tightening the tolerance must add segments, and the chord error must follow it.
+const coarse = parseGcode(['G2 I50 J0 E1'].join('\n'));
+const fine = parseGcode(['G2 I50 J0 E1'].join('\n'), { tolerance: 0.002 });
+check('a tighter tolerance buys more segments',
+  fine.stats.arcSegments > coarse.stats.arcSegments,
+  `${coarse.stats.arcSegments} → ${fine.stats.arcSegments}`);
+check('the drawn curve honours the tighter tolerance too',
+  sagitta(fine.layers[0].paths[0].pts, 50, 0) <= 0.002 + 1e-9,
+  `${sagitta(fine.layers[0].paths[0].pts, 50, 0).toFixed(6)} mm`);
+
+// Inches: every coordinate, including the arc centre, is scaled once.
+const inches = parseGcode([
+  'G20', 'G0 X0 Y0 Z0.008', 'G1 X1 Y0 E0.1', 'G1 X1 Y1 E0.2',
+].join('\n'));
+check('G20 scales coordinates to millimetres',
+  Math.abs(inches.bounds.width - 25.4) < 1e-6 && Math.abs(inches.bounds.height - 25.4) < 1e-6,
+  `${inches.bounds.width} × ${inches.bounds.height}`);
+check('G20 is disclosed, not silent', inches.stats.unsupported.some((u) => u.startsWith('G20')));
+const inchArc = parseGcode(['G20', 'G3 X0 Y0.4 I0 J0.2 E1'].join('\n'));
+check('an arc in inches keeps its millimetre size',
+  Math.abs(inchArc.bounds.width - 5.08) < 1e-6 && Math.abs(inchArc.bounds.height - 10.16) < 1e-6,
+  `${inchArc.bounds.width} × ${inchArc.bounds.height} mm (r = 0.2 in = 5.08 mm)`);
+
+// Out-of-plane arcs: interpreted in their own plane, drawn as the XY projection, and said so.
+const xz = parseGcode(['G18', 'G0 X0 Z0 Y5', 'G2 X10 Z0 I5 K0 E1'].join('\n'));
+check('G18 arcs are read in (Z, X)',
+  Math.abs(xz.bounds.width - 10) < 1e-6 && Math.abs(xz.bounds.height) < 1e-6,
+  `${xz.bounds.width} × ${xz.bounds.height}`);
+check('G18 is disclosed', xz.stats.unsupported.some((u) => u.startsWith('G18/G19')));
+const yz = parseGcode(['G19', 'G0 X3 Y0 Z0', 'G3 Y10 Z0 J5 K0 E1'].join('\n'));
+check('G19 arcs are read in (Y, Z)',
+  Math.abs(yz.bounds.width) < 1e-6 && Math.abs(yz.bounds.height - 10) < 1e-6,
+  `${yz.bounds.width} × ${yz.bounds.height}`);
 
 const plain = parseGcode(['G0 X0 Y0 Z0.2', 'G1 X5 Y0 E1', 'G1 X5 Y5 E2'].join('\n'));
 check('a file without markers still renders', plain.layers.length === 1 && plain.layers[0].paths.length === 1);

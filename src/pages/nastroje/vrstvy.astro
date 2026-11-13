@@ -78,18 +78,24 @@ import { webApplication } from '../../lib/seo';
 
     <div class="bench">
       <div class="bench-row"><b>3D náhled s otáčením</b><span class="svc">pohled</span><span class="state">ne — kreslí se půdorys jedné vrstvy; na „co pojede“ to stačí</span><i class="dot warn"></i></div>
-      <div class="bench-row"><b>Oblouky G2/G3</b><span class="svc">dráha</span><span class="state">jen koncový bod — nástroj to napíše, nezkreslí</span><i class="dot warn"></i></div>
+      <div class="bench-row"><b>Oblouky G2/G3</b><span class="svc">dráha</span><span class="state">skutečné oblouky z I/J/K i R; tětiva se od oblouku liší nejvýš o 0,02 mm</span><i class="dot ok"></i></div>
+      <div class="bench-row"><b>Palce G20</b><span class="svc">jednotky</span><span class="state">přepočítá na mm včetně středů oblouků a napíše to do poznámky</span><i class="dot ok"></i></div>
+      <div class="bench-row"><b>Roviny G18/G19</b><span class="svc">oblouk</span><span class="state">spočítá v rovině souboru, ale kreslí průmět do XY — svislý oblouk je na půdorysu úsečka</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Simulace stroje</b><span class="svc">čas</span><span class="state">ne — žádné zrychlení, teplota ani tlak</span><i class="dot warn"></i></div>
       <div class="bench-row"><b>Soubor nad 40 MB</b><span class="svc">velikost</span><span class="state">odmítne — takový soubor patří do sliceru</span><i class="dot warn"></i></div>
     </div>
 
     <p class="dim" style="max-width:62ch;margin-top:22px">
-      Náhled čte jen to, co je v souboru: <span class="mono">G0/G1</span>, změny
-      <span class="mono">Z</span> a komentáře <span class="mono">;Shell</span> /
-      <span class="mono">;Internal Infill</span>. Soubor bez komentářů se vykreslí jednou barvou —
-      hádat, co je obrys, by bylo horší než to nevědět. Rozumí <span class="mono">G90/G91</span>,
-      <span class="mono">M82/M83</span> i <span class="mono">G92</span>; extruzi počítá
-      z přírůstku a retrakci do ní nepočítá.
+      Náhled čte jen to, co je v souboru: <span class="mono">G0/G1</span> a
+      <span class="mono">G2/G3</span>, změny <span class="mono">Z</span> a komentáře
+      <span class="mono">;Shell</span> / <span class="mono">;Internal Infill</span>. Soubor bez
+      komentářů se vykreslí jednou barvou — hádat, co je obrys, by bylo horší než to nevědět.
+      Rozumí <span class="mono">G90/G91</span>, <span class="mono">M82/M83</span>,
+      <span class="mono">G92</span>, jednotkám <span class="mono">G20/G21</span> i rovinám
+      <span class="mono">G17/G18/G19</span>; extruzi počítá z přírůstku a retrakci do ní nepočítá.
+      Oblouk je rozdělený na tětivy tak, aby se žádná od skutečného oblouku neodchýlila víc než
+      o 0,02 mm — na průměru 50 mm to je 70 bodů. Kde soubor střed ani poloměr neudává, kreslí se
+      přímka a nástroj to napíše.
     </p>
 
     <p class="mono dim" style="margin-top:14px;display:flex;align-items:center;gap:8px">

@@ -434,8 +434,18 @@ with `trimesh.creation.box([30,20,4]).difference(cylinder(radius=3, height=20))`
 it is: real toolpaths, never printed, and written in Klipper's dialect — on LinuxCNC a post would
 have to rewrite it first. A download link ships the same file.
 
-**Verification:** `scripts/verify-gcode.mjs` — 30 checks (`npm run verify:gcode`), including
-the three failures above as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
+**Arcs are curves, not chords.** G2/G3 used to be counted, admitted to, and then drawn as the
+straight line between their endpoints — a chord where the file has an arc, which is the
+millimetre-level lie the tool exists to avoid. They are tessellated now in the file's own plane
+(G17/G18/G19) from I/J/K or R (R>0 the minor arc, R<0 the major one, start equal to end a full
+circle), with the step angle chosen so that no chord strays more than `ARC_TOLERANCE_MM = 0.02 mm`
+from the true arc — 70 segments for a Ø50 circle. The tolerance is a parser option, carried on
+`stats.arcTolerance`, and stated on the page. G20 scales coordinates, arc centres and R to
+millimetres and says so in the notes; out-of-plane arcs are computed in their plane and drawn as
+the XY projection, a limit the page states rather than hides.
+
+**Verification:** `scripts/verify-gcode.mjs` — 49 checks (`npm run verify:gcode`), including
+the three failures above and the arc geometry as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
 **Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
 (§5 of the handoff).
@@ -691,6 +701,19 @@ opened, stops stepping when the stage is left, and starts the build over when it
 verified by painted pixels (51 904) and the note text, not by watching the animation play on a
 visible screen; that is the owner's check. Nothing was verified against PrusaSlicer or Cura
 output, and nothing is live — deploys are paused.
+
+**2026-11-13 · D17 arcs (G2/G3 as curves, G20, G18/G19).** The reader counted arcs and then drew
+the straight line between their endpoints: on screen the tool went somewhere the file never sent
+it. G2/G3 are now tessellated from I/J/K or R in the file's own plane, with a stated chord
+tolerance of 0.02 mm, and the page's limit list changed with the behaviour. 19 new checks compare
+the drawn polyline against known circles — quarter arc, full circle, R minor and major, inches,
+and both out-of-plane planes — including a sagitta measured over every chord rather than trusting
+the formula that produced the points. Four of those checks failed on the first run; all four were
+my test expectations (a 90° arc sampled at 14 points cannot have one exactly at 45°; R5 on a
+chord of 10 is a semicircle, where the sign of R selects no side), not the parser, and the
+expectations were corrected to the geometry.
+**Not verified:** a real arc-heavy CAM file — our engine's slices contain no G2/G3 — so the
+geometry is proven against hand-written files with known numbers, not against a machine's output.
 
 ## Dependencies and risks
 
