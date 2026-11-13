@@ -37,8 +37,12 @@ proxy is already written for it — `functions/api/font.js` is the Pages Functio
 
 1. Create a free Cloudflare account and add `riplay.cz` as a zone.
 2. Cloudflare gives you two nameservers; set them at **OVH** (Domain → DNS servers) in place
-   of the current ones. This moves DNS, not the domain — OVH stays the registrar, and the
-   mailbox at OVH is unaffected.
+   of the current ones. This moves DNS, not the domain — OVH stays the registrar.
+
+   **Before switching, recreate every existing record in Cloudflare**, especially the mail
+   ones: `MX` for `info@riplay.cz`, plus `SPF`, `DKIM` and `DMARC` TXT records. Changing
+   nameservers without them silently kills the inbox, and the inbox is already the site's
+   open gate (`PLAN.md` D3b). Copy them across, then switch.
 3. Workers & Pages → **Create → Pages → Connect to Git** → `Aeell/riplay-web`.
    - Framework preset: Astro (or none)
    - Build command: `npm run build`
