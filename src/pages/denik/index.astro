@@ -1,10 +1,14 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import { isLive } from '../../lib/episodes';
 
-// Planned episodes are listed but not linked: no URL exists until one is published.
-const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.localeCompare(b.data.n));
-const published = episodes.filter((e) => e.data.status === 'published');
+// Published and planned differ by whether a page exists, so the row is an anchor only when
+// `isLive` says one was generated — the same predicate the route uses.
+const episodes = (await getCollection('episodes')).sort((a, b) =>
+  a.data.n.localeCompare(b.data.n, 'cs', { numeric: true }),
+);
+const liveCount = episodes.filter(isLive).length;
 ---
 
 <Base title="Deník stavby — Riplay" description="Epizody stavby pětiosé mašiny: co fungovalo, co ne, a co to stálo.">
@@ -14,7 +18,7 @@ const published = episodes.filter((e) => e.data.status === 'published');
         <p class="eyebrow">deník</p>
         <h1 style="margin-top:14px">Deník stavby</h1>
       </div>
-      <span class="eyebrow">{published.length} publikováno</span>
+      <span class="eyebrow">{liveCount} publikováno</span>
     </div>
 
     <p class="lead" style="max-width:62ch">
@@ -24,22 +28,19 @@ const published = episodes.filter((e) => e.data.status === 'published');
 
     <div class="eps">
       {episodes.map((e) => {
-        const isPublished = e.data.status === 'published';
-        const stamp = e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme';
-        const body = (
-          <>
+        const live = isLive(e);
+        const Tag = live ? 'a' : 'div';
+        return (
+          <Tag class:list={['ep-row', { planned: !live }]} href={live ? `/denik/${e.id}/` : undefined}>
             <span class="mono dim">{e.data.n}</span>
             <div>
               <h2>{e.data.title}</h2>
               <p>{e.data.summary}</p>
             </div>
-            <span class="mono dim">{stamp}</span>
-          </>
-        );
-        return isPublished ? (
-          <a class="ep-row" href={`/denik/${e.id}/`}>{body}</a>
-        ) : (
-          <div class="ep-row planned">{body}</div>
+            <span class="mono dim">
+              {live && e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme'}
+            </span>
+          </Tag>
         );
       })}
     </div>

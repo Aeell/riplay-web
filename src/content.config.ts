@@ -46,6 +46,11 @@ const episodes = defineCollection({
     date: z.coerce.date().nullable().default(null),
     /** the machine configuration the episode is dated against */
     machineConfig: z.string().nullable().default(null),
+  }).refine((e) => e.status !== 'published' || e.date !== null, {
+    // Every page on this site says "stav k <date>". An undated published episode would be the
+    // one page that cannot, so publishing without a date fails the build instead.
+    message: 'publikovaná epizoda musí mít datum',
+    path: ['date'],
   }),
 });
 
