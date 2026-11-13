@@ -59,6 +59,15 @@ check('a hop does not lose toolpaths', hop.layers.reduce((n, l) => n + l.paths.l
   `${hop.layers.reduce((n, l) => n + l.paths.length, 0)} paths in ${hop.layers.length} layers`);
 check('single-point moves are not paths', hop.layers.every((l) => l.paths.every((p) => p.pts.length > 1)));
 
+// A toolpath that is one move long is still a toolpath, and it starts where the nozzle was.
+const single = parseGcode([';LAYER 0', 'G0 X0 Y0 Z0.2', 'G1 X5 Y0 E1'].join('\n'));
+check('a one-move path is kept', single.layers[0]?.paths.length === 1, `${single.layers[0]?.paths.length}`);
+check(
+  'a path starts where the move started',
+  single.layers[0]?.paths[0]?.pts[0].x === 0 && single.layers[0]?.paths[0]?.pts[1].x === 5,
+  JSON.stringify(single.layers[0]?.paths[0]?.pts),
+);
+
 const noToolpath = parseGcode([
   'G0 Z30', ';LAYER 0', 'G0 X0 Y0 Z0.3', 'G0 Z0.6',
   'G1 X5 Y0 E1', 'G1 X5 Y5 E2',   // a real path, so the layer is drawable

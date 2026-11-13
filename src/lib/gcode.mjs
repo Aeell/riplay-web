@@ -146,6 +146,10 @@ export function parseGcode(text, { maxLines = 1_000_000 } = {}) {
 
     const nx = words.X !== undefined ? (absolute ? words.X : x + words.X) : x;
     const ny = words.Y !== undefined ? (absolute ? words.Y : y + words.Y) : y;
+    // Where the move starts. A path has to remember it, or every path loses its first segment
+    // and a path made of one move disappears entirely.
+    const px = x;
+    const py = y;
     x = nx;
     y = ny;
     stats.moves += 1;
@@ -168,7 +172,7 @@ export function parseGcode(text, { maxLines = 1_000_000 } = {}) {
     ensureLayer(round(z));
     if (!path || path.kind !== (kind ?? 'infill')) {
       flush();
-      path = { kind: kind ?? 'infill', pts: [{ x, y }] };
+      path = { kind: kind ?? 'infill', pts: [{ x: px, y: py }, { x, y }] };
     } else {
       path.pts.push({ x, y });
     }

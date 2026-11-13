@@ -337,16 +337,41 @@ After the fixes the reader reports **445 layers, z 0.30 → 133.50 mm, 31 762 mm
 for `/tmp/pipe.gcode`, matching the engine's own 445 `;Layer` markers, and the browser draws
 each layer (≈12 000 painted pixels on layer 1, ≈7 000 at 223).
 
-**Verification:** `scripts/verify-gcode.mjs` — 18 checks (`npm run verify:gcode`), including
+**Verification:** `scripts/verify-gcode.mjs` — 20 checks (`npm run verify:gcode`), including
 the three failures above as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
 **Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
 (§5 of the handoff).
 **Done:** a real sliced model is scrubbable in the browser.
 
-### D18 — One engine, two uses
+### D18 — One engine, two uses — **half done 2026-11-13**, the other half needs a printed part
 Point the site's Replay at the slicer viewer for a printed part.
-**Done:** the homepage replay and the slicer preview share the viewer component.
+
+**What now happens:** `src/lib/layer-draw.mjs` is one renderer (fit, flip Y, paint infill under
+perimeters) used by both `/nastroje/vrstvy` and the Replay's print stage. The homepage print stage
+used to be 27 hand-drawn horizontal lines — a picture of a print, not a print. It now paints real
+toolpaths: `scripts/build-replay-sample.mjs` (`npm run sample:replay`) slices-with-the-reader a
+real `.gcode` and writes `/vrstvy/vzor.json` — 8 of 445 layers, decimated to 0.6 mm, rounded to
+0.1 mm, **16 KB gzipped, fetched only when someone opens the print stage**. The homepage itself
+did not grow: 6.4 KB of HTML and a 1.1 KB script.
+
+The stage builds the part layer by layer from those paths, and says under itself what it is:
+"dráhy z opravdového řezu · 8 vrstev, zjednodušeno". With `prefers-reduced-motion` it draws the
+finished stack instead of animating. If the fetch fails the note says so rather than showing an
+empty stage that reads as a finished drawing.
+
+**What is honestly missing:** the plan wants the Replay pointed at a **printed** part. Nothing has
+been printed on the real machine yet (D16), so the homepage still shows the sample and still
+carries the sample badge. When D16 lands: regenerate the JSON from that part's gcode
+(`npm run sample:replay -- <file> <layers> <step>`), point the part page at it, and drop the
+sample badge there.
+
+**Also missing, deliberately:** the two do not share the whole component, only the renderer. The
+chrome differs because the jobs differ — the homepage is a six-stage story of a job, the toolbox
+is a layer scrubber over a file you brought. Forcing one component over both would have made each
+worse.
+
+**Done:** the homepage replay and the slicer preview draw with the same renderer.
 
 ### D19 — Episode 1 **[SHIP]**
 First hardware milestone (4th/5th axis motion on the bench). Film it, publish it,
@@ -436,6 +461,40 @@ Three things must be true before the first message leaves, and two of them are t
 **Done (O2):** ten named targets contacted individually, replies logged, no purchased list.
 
 ---
+
+## Review log
+
+Reviews are recorded here with what they found, because a review that only says "looks good"
+is worth nothing, and a defect found is more useful than a defect avoided.
+
+**2026-11-13 · D17 + D18 (viewer, shared renderer).** Found by running the code against a real
+sliced file, then re-reading it, not by reading alone:
+
+1. **z-hop became layers.** Z oscillates 0.3 → 0.6 → 0.3 inside one layer; treating every Z change
+   as a layer turned a 445-layer print into 51 365 "layers". Layer boundaries now come from the
+   file's own markers, with rising Z only as a fallback that the page admits to.
+2. **A leading `Z30` set layer 1's height** (and left it with no paths). A layer is as tall as the
+   lowest Z before its first toolpath; empty layers are dropped.
+3. **The marker regex was case-sensitive**, so uppercase `;LAYER` silently fell back to the
+   approximate path.
+4. **Every path lost its first segment**, and a path of one move disappeared entirely — paths
+   started at the move's *destination*. Found while writing D18's fixtures, fixed in the parser.
+5. **`pathBounds(layers)` instead of `pathBounds(paths)`** — the print stage painted nothing, and
+   the error handler then overwrote a true "loaded" note with "could not load". Both fixed; a
+   later paint error can no longer falsify the note.
+6. **The sample note described the canvas but showed on every stage**, so it captioned the CAD
+   sketch as toolpaths. It is now tied to the print stage in CSS.
+7. **Millimetres were rounded away** in the readout (108.36 mm printed as "108").
+8. **The line ceiling (400 000) was below the file ceiling (40 MB)**, so the workshop's own output
+   was refused as "truncated". Raised to 1 000 000 lines: what the tool accepts, it reads whole.
+
+Every one of 1–5 and 7 has a test now: `npm run verify:gcode` — 20 checks.
+
+**What this review did not cover:** every browser check ran in a hidden preview tab
+(`visibilityState: hidden`), where CSS transitions and timers are throttled. The print stack was
+verified by painted pixels (51 904) and the note text, not by watching the animation play on a
+visible screen; that is the owner's check. Nothing was verified against PrusaSlicer or Cura
+output, and nothing is live — deploys are paused.
 
 ## Dependencies and risks
 

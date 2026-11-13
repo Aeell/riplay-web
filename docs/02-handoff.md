@@ -299,11 +299,17 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        40 MB are refused with a message instead of freezing the tab. Only PDF stays open,
        because it is a page rather than a path.
 9. [x] D17 done — `/nastroje/vrstvy` reads a `.gcode` in the browser and scrubs it by layer
-       (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 18 checks). Uses a 2D canvas, not
+       (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 20 checks). Uses a 2D canvas, not
        Three.js: see the deviation recorded in `PLAN.md` D17. Reads `;Layer` / `;LAYER:` /
        `;LAYER_CHANGE` markers; without markers it falls back to rising Z and says so. The
        first real file broke it three times (z-hop → 51 365 "layers", leading `Z30` poisoning
        layer 1, case-sensitive marker regex) — all three are now regression tests.
+10. [~] D18 half done — `src/lib/layer-draw.mjs` is one renderer shared by `/nastroje/vrstvy` and
+       the homepage Replay's print stage, which now paints **real** toolpaths from
+       `public/vrstvy/vzor.json` (`npm run sample:replay`, 8 of 445 layers, decimated, 16 KB gz,
+       fetched only when the stage is opened) instead of 27 hand-drawn lines. The other half —
+       pointing it at a **printed** part — waits on D16. Review findings for D17/D18 are in
+       `PLAN.md` § Review log (8 defects, 6 of them now tests).
 8. [ ] Recover access to `info@riplay.cz` (`PLAN.md` D3b) — the site's only contact path.
        Delivery is proven by probe; the inbox is unreadable until the owner logs in to OVH.
 9. [ ] Before any outreach campaign: DMARC + DKIM, then a test send that passes (§9).

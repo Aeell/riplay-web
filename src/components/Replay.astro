@@ -117,15 +117,7 @@ const {
         </g>
       </g>
 
-      <!-- 4 · print -->
-      <g class="l l-print" clip-path="none">
-        <g mask="url(#mPart)" stroke="#5f6468" stroke-width="0.7">
-          {Array.from({ length: 27 }, (_, i) => (
-            <line x1="200" y1={154 + i * 6.2} x2="520" y2={154 + i * 6.2} />
-          ))}
-        </g>
-        <circle cx="442" cy="202" r="30" fill="none" stroke="#8d8f8d" stroke-width="1.2" />
-      </g>
+      <!-- 4 · print — drawn on the canvas below from paths of a real slice, never as a sketch -->
 
       <!-- 5 · done -->
       <g class="l l-done">
@@ -144,6 +136,9 @@ const {
         <text x="210" y="112" fill="#a8a6a1" font-family="ui-monospace, monospace" font-size="10" text-anchor="end">Al 6061 · frézováno</text>
       </g>
     </svg>
+
+    <canvas class="rp-print" data-print-canvas aria-hidden="true"></canvas>
+    <p class="rp-print-note mono" data-print-note hidden></p>
   </div>
 
   <div class="replay-bar">
@@ -164,13 +159,20 @@ const {
 </div>
 
 <script>
+  import { fitTransform, paintStack, pathBounds, sizeCanvas } from '../lib/layer-draw.mjs';
+
   const LAYERS: [string, number, number][] = [
     ['.l-cad', 1, 5],
     ['.l-cam', 2, 2],
     ['.l-mill', 3, 5],
-    ['.l-print', 4, 5],
     ['.l-done', 5, 5],
   ];
+
+  // Real toolpaths from a real slice, reduced and fetched only when the print stage is reached:
+  // the homepage must not carry 12 KB of G-code that most visitors never look at.
+  const SAMPLE_URL = '/vrstvy/vzor.json';
+  type Pt = { x: number; y: number };
+  type PrintLayer = { z: number; paths: { kind: 'perimeter' | 'infill'; pts: Pt[] }[] };
 
   document.querySelectorAll<HTMLElement>('.replay').forEach((root) => {
     const range = root.querySelector<HTMLInputElement>('.rp-range');
@@ -179,6 +181,87 @@ const {
     const nowN = root.querySelector<HTMLElement>('[data-now-n]');
     if (!range || !ticks.length) return;
 
+    const canvas = root.querySelector<HTMLCanvasElement>('[data-print-canvas]');
+    const note = root.querySelector<HTMLElement>('[data-print-note]');
+    let stack: PrintLayer[] | null = null;
+    let loading = false;
+    let timer = 0;
+    let built = 0;
+
+    const paintPrint = () => {
+      if (!canvas || !stack || !stack.length) return;
+      const surface = sizeCanvas(canvas);
+      if (!surface) return;
+      const { ctx, width, height } = surface;
+      ctx.clearRect(0, 0, width, height);
+      const t = fitTransform(pathBounds(stack.flatMap((layer) => layer.paths)), width, height, 10);
+      if (!t) return;
+      paintStack(ctx, stack, built, t, { lineWidth: 0.9 });
+    };
+
+    const stopPrint = () => {
+      if (timer) window.clearInterval(timer);
+      timer = 0;
+    };
+
+    const startPrint = () => {
+      if (!canvas || timer) return;
+      if (!stack) {
+        loadSample();
+        return;
+      }
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        built = stack.length - 1;
+        paintPrint();
+        return;
+      }
+      built = 0;
+      paintPrint();
+      timer = window.setInterval(() => {
+        built += 1;
+        if (built >= stack.length - 1) {
+          built = stack.length - 1;
+          paintPrint();
+          stopPrint();
+          return;
+        }
+        paintPrint();
+      }, 110);
+    };
+
+    const loadSample = () => {
+      if (loading || stack) return;
+      loading = true;
+      fetch(SAMPLE_URL)
+        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+        .then((data: { layers: { z: number; paths: { k: string; pts: number[] }[] }[] }) => {
+          stack = data.layers.map((layer) => ({
+            z: layer.z,
+            paths: layer.paths.map((path) => {
+              const pts: Pt[] = [];
+              for (let i = 0; i < path.pts.length; i += 2) pts.push({ x: path.pts[i], y: path.pts[i + 1] });
+              return { kind: path.k === 'p' ? ('perimeter' as const) : ('infill' as const), pts };
+            }),
+          }));
+          if (note) {
+            note.textContent = `dráhy z opravdového řezu · ${stack.length} vrstev, zjednodušeno`;
+            note.hidden = false;
+          }
+          if (root.dataset.stage === '4') startPrint();
+        })
+        .catch(() => {
+          // Say it failed rather than show an empty stage that looks like a finished drawing.
+          // Only when nothing loaded: a later paint error must not overwrite a true note.
+          if (note && !stack) {
+            note.textContent = 'dráhy se nepodařilo načíst';
+            note.hidden = false;
+          }
+        })
+        .finally(() => {
+          loading = false;
+        });
+    };
+
     const paint = (raw: number) => {
       const s = Math.max(0, Math.min(ticks.length - 1, raw));
       root.dataset.stage = String(s);
@@ -186,6 +269,8 @@ const {
       for (const [sel, min, max] of LAYERS) {
         root.querySelector(sel)?.classList.toggle('is-on', s >= min && s <= max);
       }
+      if (s === 4) startPrint();
+      else stopPrint();
       ticks.forEach((b, i) => b.setAttribute('aria-current', i === s ? 'true' : 'false'));
       if (nowK) nowK.textContent = ticks[s].dataset.k ?? '';
       if (nowN) nowN.textContent = ticks[s].dataset.n ?? '';
@@ -193,6 +278,9 @@ const {
 
     range.addEventListener('input', () => paint(Number(range.value)));
     ticks.forEach((b, i) => b.addEventListener('click', () => paint(i)));
+    window.addEventListener('resize', () => {
+      if (root.dataset.stage === '4') paintPrint();
+    });
     paint(0);
   });
 </script>

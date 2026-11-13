@@ -98,6 +98,7 @@ import Icon from '../../components/Icon.astro';
 
 <script>
   import { parseGcode } from '../../lib/gcode.mjs';
+  import { fitTransform, paintLayer, sizeCanvas } from '../../lib/layer-draw.mjs';
 
   const MAX_BYTES = 40 * 1024 * 1024;
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
@@ -121,44 +122,13 @@ import Icon from '../../components/Icon.astro';
 
   function draw() {
     if (!canvas || !parsed || !parsed.layers.length) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    if (canvas.width !== Math.round(width * dpr)) {
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-    }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const surface = sizeCanvas(canvas);
+    if (!surface) return;
+    const { ctx, width, height } = surface;
     ctx.clearRect(0, 0, width, height);
-
-    const b = parsed.bounds;
-    if (!b || b.width === 0 || b.height === 0) return;
-    const pad = 24;
-    const scale = Math.min((width - pad * 2) / b.width, (height - pad * 2) / b.height);
-    const ox = (width - b.width * scale) / 2;
-    const oy = (height - b.height * scale) / 2;
-    const px = (x: number) => ox + (x - b.minX) * scale;
-    const py = (y: number) => height - oy - (y - b.minY) * scale; // G-code Y grows up
-
-    const layer = parsed.layers[index];
-    for (const pass of ['infill', 'perimeter'] as const) {
-      ctx.beginPath();
-      for (const path of layer.paths) {
-        if (path.kind !== pass) continue;
-        path.pts.forEach((pt, i) => {
-          const x = px(pt.x);
-          const y = py(pt.y);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-      }
-      ctx.strokeStyle = pass === 'perimeter' ? '#e9e7e2' : '#4b5157';
-      ctx.lineWidth = pass === 'perimeter' ? 1.1 : 0.8;
-      ctx.lineJoin = 'round';
-      ctx.stroke();
-    }
+    const t = fitTransform(parsed.bounds, width, height, 24);
+    if (!t) return;
+    paintLayer(ctx, parsed.layers[index], t);
   }
 
   function show(i: number) {
