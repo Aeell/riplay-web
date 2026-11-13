@@ -59,3 +59,12 @@ for a real part — if a value is unknown it stays `null` and renders as a visib
 - Every number on a real page must come from a job record.
 - If a value is unknown, show that it is unknown. `null` is a feature.
 - Czech copy is written, never machine-translated.
+
+## Licence
+
+Code (`src/lib/`, `scripts/`, `netlify/`, `functions/`, the Astro setup) is **MIT** —
+see `LICENSE`. Everything else — docs, page copy, build log, photographs — is **CC BY 4.0**
+— see `LICENSE-CONTENT.md`. Third-party material keeps its own licence and is credited where
+it is used; customer material stays the customer's.
+
+Contributions are covered by `CODE_OF_CONDUCT.md`.
