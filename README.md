@@ -4,10 +4,16 @@ A workshop you can replay. One person, precision parts, and a public record of h
 each object was made. Read `docs/00-concept.md` first — it is the constitution; this
 file is only the operating manual.
 
-## Status (2026-11-10)
+## Status (2026-11-13)
 
-Live on **https://riplay.cz** — `www` redirects to it, and the certificate covers both
-names. Deploys are git-linked: push to `Aeell/riplay-web` and Netlify builds it.
+Live on **https://riplay.cz** — `www` redirects to it, and the certificate covers both names.
+Routes: `/`, `/dil`, `/dil/<slug>`, `/zakazka`, `/nastroje`, `/nastroje/prevod`, `/archiv`.
+
+**Deploys are paused, and nothing is broken:** the account is on Netlify's credit plans and
+the 300 monthly credits are spent, so production deploys are refused while the site keeps
+serving the last good one. `DEPLOY.md` has the credit maths, the free alternatives and the
+Cloudflare Pages kit already in the repo. Until then a push is *code on GitHub only*.
+
 Everything current, including the resume checklist, is in
 [`docs/02-handoff.md`](docs/02-handoff.md).
 
@@ -40,11 +46,16 @@ src/styles/          the design language (graphite, hairline grid, one accent)
 src/data/            shop facts and the sample Replay part
 src/components/      Replay — the signature stage scrubber
 src/pages/           home, /archiv (the old site), /nastroje + /nastroje/prevod (tools)
+src/content.config.ts  typed `parts` and `episodes` collections (zod; unknown → null)
+src/content/          parts/*.md, episodes/*.md — a file is a page
 src/lib/             font-geometry.mjs (text → SVG/DXF), mesh.mjs (STL/OBJ/PLY/GLB),
-                     paths2d.mjs (SVG ↔ DXF, mm, open/closed contours)
-netlify/functions/   font.mjs — /api/font, the only server-side code (Google Fonts → TTF)
+                     paths2d.mjs (SVG ↔ DXF, mm, open/closed contours), font-proxy.mjs
+netlify/functions/   font.mjs — /api/font adapter (Google Fonts → TTF)
+functions/api/       font.js — the same endpoint as a Cloudflare Pages Function
 scripts/             verify-font2dxf.mjs, verify-mesh.mjs, verify-paths2d.mjs,
-                     build-font-catalog.mjs, serve-local.mjs
+                     verify-proxy.mjs, build-font-catalog.mjs, serve-local.mjs
+DEPLOY.md            hosting costs, and how to leave Netlify for free
+LICENSE              MIT (code) · LICENSE-CONTENT.md CC BY 4.0 · CODE_OF_CONDUCT.md
 ```
 
 ## Adding a part (from D2)

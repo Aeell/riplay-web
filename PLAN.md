@@ -71,11 +71,18 @@ Owner-only, in this order:
 **Done:** a message sent from outside arrives, is readable, and a reply sent from it lands
 in an inbox the owner actually checks.
 
-### D4 — Intake **[SHIP]**
+### D4 — Intake **[SHIP]** ⚠ built 2026-11-13, done test blocked by D3b
 `/zakazka`: photo-first, no account. Realistic v1: the form assembles a pre-filled
 WhatsApp/e-mail message with the photo attached by the sender — no backend, no
 broken promise, works from a phone in a garage.
+
+Built as a `mailto:` composer that says what it is: the page uploads and stores nothing, the
+draft survives a reload in `localStorage`, the message is previewed live, and a copy button
+covers clients that truncate long `mailto:` URLs. WhatsApp is omitted rather than faked —
+there is no published phone number, and inventing one would break the constitution. The
+homepage CTA and the nav now point at the page instead of at an anchor.
 **Done:** submit a test commission from a phone; it arrives where you actually read.
+**Blocked:** the second half needs a readable inbox, which is D3b.
 
 ---
 

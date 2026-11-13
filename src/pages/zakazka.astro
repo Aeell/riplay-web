@@ -1,0 +1,290 @@
+---
+import Base from '../layouts/Base.astro';
+import { shop } from '../data/shop';
+
+// D4. There is no backend on purpose: the form stores and uploads nothing, it only
+// assembles a message the sender's own mail app opens with their photos attached.
+// A form that silently did nothing would be worse than a mailto.
+const email = shop.legal.email;
+---
+
+<Base
+  title="Zadat dílo — Riplay"
+  description="Pošli fotku a pár vět. Formulář nic nenahrává ani neukládá — sestaví zprávu, kterou odešleš ze svého e-mailu i s fotkami."
+>
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">05 / zakázka</p>
+        <h1 style="margin-top:14px">Zadat dílo</h1>
+      </div>
+      <span class="eyebrow">bez registrace</span>
+    </div>
+
+    <p class="lead" style="max-width:64ch">
+      Nemusíš vědět, jak se to jmenuje ani z čeho to je. Stačí, co to má dělat a kam to má
+      pasovat. Fotky přiložíš v e-mailu — stránka nic nenahrává a nic si nepamatuje.
+    </p>
+
+    <div class="intake">
+      <form class="form" id="intake" autocomplete="on" data-email={email}>
+        <label>
+          <span>Co to je / co má dělat <em>povinné</em></span>
+          <textarea id="f-co" name="co" rows="4" required
+            placeholder="Prasklý držák v autě, chybí kus. Měl by držet telefon a jít přišroubovat na palubku."></textarea>
+        </label>
+
+        <label>
+          <span>Kam to má pasovat</span>
+          <input id="f-kam" name="kam" type="text"
+            placeholder="Škoda Octavia 2016, místo po původním držáku" />
+        </label>
+
+        <div class="two">
+          <label>
+            <span>Materiál, pokud víš</span>
+            <input id="f-material" name="material" type="text" placeholder="hliník, plast — nebo nevím" />
+          </label>
+          <label>
+            <span>Termín</span>
+            <input id="f-termin" name="termin" type="text" placeholder="spěchá / do tří týdnů" />
+          </label>
+        </div>
+
+        <div class="two">
+          <label>
+            <span>Jméno</span>
+            <input id="f-jmeno" name="jmeno" type="text" autocomplete="name" />
+          </label>
+          <label>
+            <span>E-mail nebo telefon</span>
+            <input id="f-kontakt" name="kontakt" type="text" autocomplete="email"
+              placeholder="kam má přijít odpověď" />
+          </label>
+        </div>
+
+        <p class="hint mono">
+          Fotky: přilož je v e-mailu, až se otevře. Formulář sám nic neodesílá ani neukládá.
+        </p>
+
+        <div class="actions">
+          <a class="btn" id="intake-send" href={`mailto:${email}?subject=Zak%C3%A1zka%20z%20riplay.cz`}>
+            Otevřít v e-mailu →
+          </a>
+          <button class="btn ghost" type="button" id="intake-copy">Kopírovat text</button>
+          <span class="mono dim" id="intake-state" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+
+      <aside class="preview">
+        <p class="eyebrow">náhled zprávy</p>
+        <pre class="mono" id="intake-preview"></pre>
+        <p class="mono dim">
+          Odejde z tvého e-mailu na <b>{email}</b>. Na nic jiného se data nepoužijí.
+        </p>
+      </aside>
+    </div>
+  </section>
+</Base>
+
+<script>
+  const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
+
+  const form = $<HTMLFormElement>('intake');
+  const preview = $<HTMLElement>('intake-preview');
+  const send = $<HTMLAnchorElement>('intake-send');
+  const copy = $<HTMLButtonElement>('intake-copy');
+  const state = $<HTMLElement>('intake-state');
+
+  if (form && preview && send) {
+    const val = (id: string) => ($<HTMLInputElement>(id)?.value ?? '').trim();
+
+    const build = () => {
+      const lines = [
+        'Dobrý den,',
+        '',
+        'chci zadat dílo.',
+        '',
+        `Co to je: ${val('f-co') || '(napsat)'}`,
+      ];
+      const kam = val('f-kam');
+      const material = val('f-material');
+      const termin = val('f-termin');
+      const jmeno = val('f-jmeno');
+      const kontakt = val('f-kontakt');
+      if (kam) lines.push(`Kam to má pasovat: ${kam}`);
+      if (material) lines.push(`Materiál: ${material}`);
+      if (termin) lines.push(`Termín: ${termin}`);
+      if (jmeno) lines.push('', `Jméno: ${jmeno}`);
+      if (kontakt) lines.push(`Kontakt: ${kontakt}`);
+      lines.push('', 'Fotky přikládám v příloze.', '', jmeno || '');
+      return lines.join('\n');
+    };
+
+    // Unsaved work is the one thing a mailto form can lose, so it survives a reload.
+    const KEY = 'riplay-intake';
+    try {
+      const saved = JSON.parse(localStorage.getItem(KEY) ?? '{}');
+      for (const [id, v] of Object.entries(saved)) {
+        const el = $<HTMLInputElement>(id);
+        if (el && typeof v === 'string') el.value = v;
+      }
+    } catch {
+      /* a broken or blocked storage must never stop the form working */
+    }
+
+    const paint = () => {
+      const body = build();
+      const co = val('f-co');
+      const subject = `Zakázka z riplay.cz${co ? ` — ${co.split('\n')[0].slice(0, 40)}` : ''}`;
+      const to = form.dataset.email ?? '';
+      const href = `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      preview.textContent = `Komu: ${to}\nPředmět: ${subject}\n\n${body}`;
+      send.href = href;
+
+      // mailto URLs get truncated by some clients somewhere around 2 000 characters.
+      if (href.length > 1800) {
+        if (state) state.textContent = 'zpráva je dlouhá — použij „Kopírovat text“';
+      } else if (state) {
+        state.textContent = '';
+      }
+
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          'f-co': val('f-co'), 'f-kam': val('f-kam'), 'f-material': val('f-material'),
+          'f-termin': val('f-termin'), 'f-jmeno': val('f-jmeno'), 'f-kontakt': val('f-kontakt'),
+        }));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    form.addEventListener('input', paint);
+    form.addEventListener('submit', (e) => e.preventDefault());
+    paint();
+
+    copy?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(build());
+        if (state) state.textContent = 'zkopírováno';
+      } catch {
+        if (state) state.textContent = 'kopírování nedovoleno — vyber text v náhledu';
+      }
+    });
+  }
+</script>
+
+<style>
+  .intake {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .intake {
+      grid-template-columns: 1fr;
+      gap: 28px;
+    }
+  }
+
+  .form {
+    display: grid;
+    gap: 18px;
+  }
+  .two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 560px) {
+    .two {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  label {
+    display: grid;
+    gap: 7px;
+  }
+  label > span {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+  label em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font: inherit;
+    padding: 11px 12px;
+    border-radius: 2px;
+    resize: vertical;
+  }
+  input:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--dimmer);
+  }
+
+  .hint {
+    font-size: 11px;
+    color: var(--dim);
+    margin: 0;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    cursor: pointer;
+    font: inherit;
+    padding: 11px 16px;
+  }
+  .btn.ghost:hover {
+    border-color: var(--accent);
+  }
+
+  .preview {
+    position: sticky;
+    top: 24px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 18px;
+  }
+  .preview pre {
+    margin: 14px 0 18px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #c9c7c2;
+    min-height: 12em;
+  }
+  .preview p:last-child {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+</style>

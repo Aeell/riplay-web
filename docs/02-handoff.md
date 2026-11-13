@@ -12,10 +12,10 @@ Read this first, then `docs/00-concept.md` (the rules) and `PLAN.md` (the sessio
 | Source | `github.com/Aeell/riplay-web` — **public**, branch `master` |
 | Local path | `~/Projects/riplay` |
 | Astro | 5.18.2 (a v7 exists; deliberately not migrating) |
-| Build | `npm run build` → `dist/` — one page, ~112 KB incl. the PNG icons, no webfonts |
-| **Live** | **https://comforting-vacherin-7e37c5.netlify.app** |
-| Custom domain | `riplay.cz` — **not yet pointed**, still OVH parking |
-| Deploy method | git-linked → `Aeell/riplay-web` `master` — **but the push hook is broken (2026-11-12, §5): deploy from the dashboard, a push deploys nothing right now** |
+| Build | `npm run build` → `dist/` — seven routes, no webfonts blocking text |
+| **Live** | **https://riplay.cz** — site `f3abf7bc-b006-4cc4-a72a-8e3832df1c2d`, default URL `comforting-vacherin-7e37c5.netlify.app` |
+| Custom domain | `riplay.cz` — **live since 2026-11-11**, Let's Encrypt covering apex + `www`, records in §2 |
+| Deploy method | git-linked → `Aeell/riplay-web` `master`. **Paused 2026-11-13: the 300 free credits are spent, so production deploys are refused** — the hook is fine. See §5 and `DEPLOY.md` |
 
 Verified live on 2026-11-10, measured from outside the browser:
 HTTP 200 over HTTPS with HSTS, design-system CSS loading (`body` = `rgb(11,11,12)`),
@@ -187,12 +187,19 @@ npm run build                                    # → dist/
 
 **`Aeell/riplay-web`** (public, branch `master`) is the source of truth and was linked to
 the Netlify site on 2026-11-11 — the live deploy honours `netlify.toml` (its custom
-headers show up on live responses), which Drop deploys never do. **But on 2026-11-12 the
-link does not fire on push**: the repo has no webhook and no pushed commit carries a
-Netlify status (`gh api repos/Aeell/riplay-web/commits/<sha>/status` → 0 for every recent
-commit), so the machine-facts commit `e3d0643` never deployed and riplay.cz still serves
-the pre-`e3d0643` build. Until the hook is fixed, deploy from the dashboard
-(Deploys → Trigger deploy) and treat a `git push` as *code on GitHub only*.
+headers show up on live responses), which Drop deploys never do. **Since 2026-11-13 the cause is known, and it is not the hook.** This account is on
+Netlify's credit plans: 300 credits a month on Free, 15 per production deploy, 20 per GB of
+bandwidth. The balance ran out, so production deploys are refused — they fail in about 0.1 s
+with no build log, where successful ones took 16 s and left a `dist/` behind. The repo link,
+the webhook and `netlify.toml` are all fine; nothing needs reinstalling. Deploy Previews and
+branch deploys cost 0 credits, but they are disabled for this site (Settings → Build &
+deploy → Branches) and the pause sits above them: pushing a branch produced no deploy at all
+(verified 2026-11-13, branch deleted).
+
+So until credits return: a `git push` is *code on GitHub only*, the live site keeps serving
+the last good deploy, and work is batched into one release instead of ten. `DEPLOY.md` holds
+the credit maths and the Cloudflare Pages path — the font proxy already has a Pages adapter
+(`functions/api/font.js`), with `public/_routes.json` keeping page views off it.
 `netlify.toml` carries the build contract — `npm run build`, publish `dist`, Node
 22, long-cache `/_astro/*`, never cache HTML — and the UI fields for build command and
 publish directory are left **empty** on purpose, because duplicating them there is how the
@@ -230,14 +237,17 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering
    both names, §2. IPv6 still unverified: no v6 route on the laptop.
-2. [ ] **Deploy hook broken (2026-11-12, evidence in §5):** a push to `master` does not
-       deploy — repo has no webhook, no commit carries a Netlify status, and live content
-       predates `e3d0643`. Owner, in the Netlify dashboard: Deploys → **Trigger deploy**
-       (ships `e3d0643` immediately), then Site configuration → Build & deploy → check the
-       repository link still watches `riplay-web` / `master` and reinstall if it asks.
-       Verify after the next push:
-       `gh api repos/Aeell/riplay-web/commits/<sha>/status`.
+2. [ ] **Deploys paused by credits (2026-11-13), not a broken hook.** Nothing to fix in the
+       dashboard: the 300 monthly credits are spent. Wait for the cycle reset, buy a pack, or
+       move hosting per `DEPLOY.md`. Asked Netlify support 2026-11-13: a courtesy grant, a
+       ruling on the Open Source plan for the tooling, and whether a cheaper route exists.
+       Meanwhile: batch work into a single deploy, and use `npm run preview:full` as the
+       review loop — it costs nothing.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
+4. [x] D4 built, done test blocked (2026-11-13) — `/zakazka` is the photo-first intake with no
+       backend: it assembles the message and hands it to the sender's mail app, keeps the draft
+       in `localStorage`, uploads and stores nothing. **The done test cannot pass until D3b**,
+       because "it arrives where you actually read" needs a readable inbox.
 4. [x] D2 done (2026-11-13) — `src/content.config.ts` defines typed `parts` and `episodes`
        collections with every unknown fact nullable by type; `/dil/[slug]` renders a passport
        from data, `/dil` indexes them, and the homepage journal reads the collection. A new
@@ -342,3 +352,10 @@ manager before assuming it is off). Without both, cold mail from this domain is 
 before a human sees it. Legally, Czech law (480/2004 Sb.) requires prior consent for
 commercial e-mail, and the "existing customer" exception does not cover a scraped list —
 not even B2B.
+
+**Open decision (2026-11-13):** the homepage and `/zakazka` both promise a reply "do jednoho
+pracovního dne" while nobody can read `info@riplay.cz`. That is the one claim on the site the
+workshop cannot currently keep, so it is recorded here rather than quietly softened: either
+D3b closes and the promise stands, or the copy changes to what is actually true until it does.
+Not changed unilaterally, because it is the site's only conversion path and the owner may
+recover access this week.
