@@ -51,8 +51,14 @@ export class ToolpathViewerElement extends HTMLElement {
     this.next = this.querySelector('[data-next]');
 
     this.rangeInput?.addEventListener('input', () => this.show(Number(this.rangeInput?.value ?? 0)));
-    this.prev?.addEventListener('click', () => this.show(this.index - 1));
-    this.next?.addEventListener('click', () => this.show(this.index + 1));
+    // The step buttons stay focusable at the ends of the range (see markEnds), so the guard lives
+    // here: a press that cannot move must not fire a layerchange either.
+    this.prev?.addEventListener('click', () => {
+      if (this.index > 0) this.show(this.index - 1);
+    });
+    this.next?.addEventListener('click', () => {
+      if (this.index < this.layers.length - 1) this.show(this.index + 1);
+    });
 
     // Watch the element, not the window: it is sized by the layout around it (a grid column, a
     // drawing it is laid over), and that can change without anyone resizing the window.
@@ -99,9 +105,7 @@ export class ToolpathViewerElement extends HTMLElement {
       this.rangeInput.setAttribute('aria-valuetext', label);
     }
     if (this.layerLabel) this.layerLabel.textContent = label;
-    // A button that would do nothing is not a target: at the ends of the range, say so.
-    if (this.prev) this.prev.disabled = this.index === 0;
-    if (this.next) this.next.disabled = this.index === this.layers.length - 1;
+    this.markEnds();
     if (this.zLabel) this.zLabel.textContent = `z ${Number.isFinite(layer.z) ? layer.z.toFixed(2) : '—'} mm`;
     this.draw();
     this.dispatchEvent(
@@ -110,6 +114,23 @@ export class ToolpathViewerElement extends HTMLElement {
         detail: { index: this.index, layer, count: this.layers.length },
       }),
     );
+  }
+
+  /**
+   * Marks the step buttons that would do nothing — without `disabled`. A button disabled while it
+   * holds focus is taken out of the tab order and focus falls to <body>, so a keyboard user who
+   * steps to the last layer loses their place and the next Tab starts again at the top of the
+   * page. `aria-disabled` keeps the button focusable and has it announced as unavailable; the
+   * click handlers ignore the press. With no layers at all, both ends are unavailable.
+   */
+  private markEnds() {
+    const mark = (element: HTMLButtonElement | null, unavailable: boolean) => {
+      if (!element) return;
+      if (unavailable) element.setAttribute('aria-disabled', 'true');
+      else element.removeAttribute('aria-disabled');
+    };
+    mark(this.prev, this.index <= 0);
+    mark(this.next, this.index >= this.layers.length - 1);
   }
 
   /** Steps through the layers; with data-stack it reads as the part being built. */
@@ -146,6 +167,7 @@ export class ToolpathViewerElement extends HTMLElement {
     this.bar?.setAttribute('hidden', '');
     if (this.layerLabel) this.layerLabel.textContent = 'vrstva —';
     if (this.zLabel) this.zLabel.textContent = 'z — mm';
+    this.markEnds();
   }
 
   private draw() {

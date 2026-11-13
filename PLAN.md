@@ -548,11 +548,22 @@ is worth nothing, and a defect found is more useful than a defect avoided.
    same picture twice, the second time without meaning. The viewer now takes `decorative`, which
    removes the canvas from the accessibility tree entirely; the toolbox viewer still names itself
    because it is the only thing on that page. Verified in the live DOM: the Replay exposes exactly
-   one image, the SVG, with its own title.
+   one image, the SVG, with its own title. `decorative` is the right shape for it — it means "no
+   information of its own", the same thing `alt=""` means, and the Replay still tells a screen
+   reader about the print through its visible note ("dráhy z opravdového řezu · N vrstev"), so
+   nothing is lost by hiding the canvas. The hint line follows the same flag, since a hint for a
+   decorative drawing would be the same duplicate.
 2. **The step buttons were always enabled**, so "← předchozí" on layer 1 and "další →" on the
-   last layer were dead targets that still took focus and a click. `show()` now disables them at
-   the ends of the range, and `.btn:disabled` finally has a style (dim ink, no hover fill, default
-   cursor) so the state is visible rather than merely true.
+   last layer were dead targets that still took focus and a click. The first fix used `disabled`,
+   which introduced a second defect the next review caught: a button disabled while focused is
+   dropped from the tab order, focus falls to `<body>`, and a keyboard user who steps to the last
+   layer loses their place. The buttons now carry `aria-disabled` and stay focusable, the handlers
+   ignore a press that cannot move (so it does not even fire `layerchange`), and one rule styles
+   both `:disabled` and `[aria-disabled='true']`. `markEnds()` is the only place that decides,
+   called from `show()` and from `clear()` — so a single-layer file ends with both ends
+   unavailable and a cleared viewer cannot keep the previous file's state. Verified in the browser:
+   at 13/13 focus is still on "další", a dead press fires 0 events, 1/1 marks both, clear marks
+   both and hides the bar, and reloading a file puts the ends back.
 
 **2026-11-13 · D17 + D18 (viewer, shared renderer).** Found by running the code against a real
 sliced file, then re-reading it, not by reading alone:

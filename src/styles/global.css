@@ -134,9 +134,11 @@ h1 {
 .btn-quiet { border-color: var(--line); color: var(--dim); }
 .btn-quiet:hover { background: var(--line); color: var(--ink); }
 
-/* At the ends of a range the step button is disabled, and it has to look it: no hover fill, no
-   pointer. Kept last so it wins over both variants above without !important. */
-.btn:disabled, .btn:disabled:hover {
+/* A button that cannot act has to look like it: no hover fill, no pointer. Covers `disabled` and
+   `aria-disabled` in one rule, so the viewer never styles one and forgets the other. Kept last,
+   and the :hover selector repeated, so it wins over the variants above without !important. */
+.btn:is(:disabled, [aria-disabled='true']),
+.btn:is(:disabled, [aria-disabled='true']):hover {
   border-color: var(--line-soft);
   color: var(--dimmer);
   background: transparent;
