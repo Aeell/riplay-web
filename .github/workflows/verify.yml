@@ -1,0 +1,33 @@
+# Every push to master runs the same checks as `npm run verify:all`.
+#
+# This exists because nothing else runs them: the Netlify build only ever ran `npm run build`,
+# never a verifier, and its deploys are paused. Without this workflow the checks depend on
+# somebody remembering to type them.
+name: verify
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches netlify.toml and the Pages build variable, so the build under test is the
+          # build that would be deployed.
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # Build + every verifier, including the Pages check on workerd (the script starts and stops
+      # wrangler itself) and the one network-dependent check, which runs last.
+      - run: npm run verify:all

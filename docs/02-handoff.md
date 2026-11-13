@@ -252,6 +252,16 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 ---
 
+### Checks run themselves now (2026-11-13)
+
+`npm run verify:all` builds and runs every verifier in one command (~10 s), starting and stopping
+the Pages dev server itself for `verify:pages`. `.github/workflows/verify.yml` runs exactly that
+on every push to `master` — Node 22, `npm ci`, one step. This is the only enforcement that exists
+while Netlify's deploys are paused: the Netlify build only ever ran `npm run build`, never a
+verifier. If a red run appears on GitHub, the failing step is the whole diagnosis: the runner
+throws on the first failure and prints the diff-ready message.
+
+
 ## 6. Resume checklist, in order
 
 1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering

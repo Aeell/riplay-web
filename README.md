@@ -23,6 +23,7 @@ Everything current, including the resume checklist, is in
 npm install
 npm run dev -- --port 4321 --host 127.0.0.1   # http://127.0.0.1:4321
 npm run build                                 # static output in dist/
+npm run verify:all                            # build + every check, ~10 s
 ```
 
 Always pin the port: this shell exports `PORT=0`.
@@ -36,6 +37,12 @@ The font picker calls `/api/font`, which only exists where the function runs.
 load a font; uploads, the built-in face and the 3D converter still work.
 
 To refresh the Google Fonts catalogue (1 request, no key): `npm run fonts:catalog`.
+
+`npm run verify:all` is the whole check suite: it builds, runs every verifier (including the Pages
+one, for which it starts and stops `wrangler pages dev` itself), and calls Google once for the
+font proxy last, so a flaky third party cannot hide a real failure. GitHub Actions runs the same
+command on every push to master — the Netlify build never ran a verifier, and its deploys are
+paused, so that workflow is what actually enforces these.
 
 ## Layout
 
@@ -52,8 +59,9 @@ src/lib/             font-geometry.mjs (text → SVG/DXF), mesh.mjs (STL/OBJ/PLY
                      paths2d.mjs (SVG ↔ DXF, mm, open/closed contours), font-proxy.mjs
 netlify/functions/   font.mjs — /api/font adapter (Google Fonts → TTF)
 functions/api/       font.js — the same endpoint as a Cloudflare Pages Function
-scripts/             verify-font2dxf.mjs, verify-mesh.mjs, verify-paths2d.mjs,
-                     verify-proxy.mjs, build-font-catalog.mjs, serve-local.mjs
+scripts/             verify-*.mjs (one per contract), verify-all.mjs (all of them, and the
+                     only one you need to remember), build-font-catalog.mjs, serve-local.mjs
+.github/workflows/   verify.yml — runs `npm run verify:all` on every push to master
 DEPLOY.md            hosting costs, and how to leave Netlify for free
 LICENSE              MIT (code) · LICENSE-CONTENT.md CC BY 4.0 · CODE_OF_CONDUCT.md
 ```
