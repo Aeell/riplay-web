@@ -1,0 +1,233 @@
+---
+import Base from '../layouts/Base.astro';
+import { machine } from '../data/machine';
+
+const label = (s: string) => machine.legend.find((l) => l.state === s)?.label ?? s;
+---
+
+<Base
+  title={`${machine.name} — Riplay`}
+  description="Konfigurace stroje: co je originál, co je retrofit, co je rozbité a co se ještě neví."
+>
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">stroj · konfigurace</p>
+        <h1 style="margin-top:14px">{machine.name}</h1>
+      </div>
+      <span class="eyebrow">{machine.kind}</span>
+    </div>
+
+    <p class="lead" style="max-width:64ch">{machine.lead}</p>
+
+    <p class="provenance mono">
+      Každý řádek níž má u sebe zdroj. Dnes je to jen slovo majitele — fotky ani log ze stroje
+      ještě neexistují, a stránka to říká místo aby předstírala, že jsou.
+    </p>
+
+    <h2 class="sec">Konfigurace</h2>
+    <div class="cfg">
+      <div class="cfg-head mono"><span>položka</span><span>stav</span><span>zdroj</span></div>
+      {machine.facts.map((f) => (
+        <div class="cfg-row">
+          <div class="cfg-k">
+            <b>{f.k}</b>
+          </div>
+          <div class="cfg-v">
+            {f.v ? <span>{f.v}</span> : <span class="gap">doplní se</span>}
+            <span class="chip">{label(f.state)}</span>
+          </div>
+          <div class="cfg-src mono">{f.src}</div>
+        </div>
+      ))}
+    </div>
+
+    <h2 class="sec">Co se změnilo</h2>
+    <div class="changes">
+      {machine.changes.map((c) => (
+        <article class="change">
+          <div class="change-top">
+            <h3>{c.area}</h3>
+            <span class="chip">{label(c.state)}</span>
+          </div>
+          <p class="swap mono">
+            <span class="was">{c.before}</span>
+            <span class="arrow">→</span>
+            {c.after ? <span class="now">{c.after}</span> : <span class="gap">doplní se</span>}
+          </p>
+          {c.note && <p class="note">{c.note}</p>}
+          <p class="src mono">zdroj: {c.src}</p>
+        </article>
+      ))}
+    </div>
+
+    <h2 class="sec">Co ještě není</h2>
+    <ul class="open">
+      {machine.open.map((o) => (
+        <li>
+          <div>
+            <b>{o.what}</b>
+            <span class="mono dim"> — {o.src}</span>
+          </div>
+          <span class="chip warn">{o.status}</span>
+        </li>
+      ))}
+    </ul>
+
+    <p class="mono dim" style="margin-top:40px">
+      Tabulka se mění podle toho, co stroj opravdu umí. Když se něco rozbije, přibude to sem —
+      i když to zrovna není dobrá vizitka.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .provenance {
+    margin-top: 22px;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--dim);
+    max-width: 70ch;
+    border-left: 2px solid var(--line);
+    padding-left: 14px;
+  }
+
+  .sec {
+    margin-top: 52px;
+    font-size: clamp(20px, 2.4vw, 26px);
+  }
+
+  .cfg {
+    margin-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .cfg-head {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1.2fr;
+    gap: 18px;
+    padding: 9px 0;
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+    border-bottom: 1px solid var(--line);
+  }
+  .cfg-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1.2fr;
+    gap: 18px;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .cfg-k b {
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .cfg-v {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    color: var(--ink);
+  }
+  .cfg-src {
+    font-size: 11px;
+    color: var(--dim);
+  }
+  @media (max-width: 760px) {
+    .cfg-head {
+      display: none;
+    }
+    .cfg-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+      padding: 16px 0;
+    }
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid var(--line);
+    color: var(--dim);
+    padding: 2px 7px;
+    white-space: nowrap;
+  }
+  .chip.warn {
+    color: #e8b04b;
+    border-color: #4a3a1c;
+  }
+
+  .changes {
+    margin-top: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 18px;
+  }
+  .change {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    padding: 18px;
+  }
+  .change-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .change h3 {
+    font-size: 16px;
+    margin: 0;
+  }
+  .swap {
+    margin: 12px 0 8px;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+  .swap span {
+    display: inline-block;
+  }
+  .was {
+    color: var(--dimmer);
+    text-decoration: line-through;
+  }
+  .arrow {
+    color: var(--accent);
+    margin: 0 8px;
+  }
+  .now {
+    color: var(--ink);
+  }
+  .note {
+    margin: 0 0 10px;
+    color: var(--dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .src {
+    margin: 0;
+    font-size: 10.5px;
+    color: var(--dimmer);
+  }
+
+  .open {
+    list-style: none;
+    margin: 20px 0 0;
+    padding: 0;
+    border-top: 1px solid var(--line);
+  }
+  .open li {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .open b {
+    font-weight: 500;
+  }
+</style>

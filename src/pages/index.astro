@@ -81,6 +81,7 @@ const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.local
         </div>
         <p class="mono dim" style="margin-top:14px">
           Stav se mění. Když je něco rozestavěné, je to tady vidět — i když to zrovna nefunguje.
+          <a href="/stroj/" class="inline-link">Celá konfigurace stroje →</a>
         </p>
       </div>
       <Iso />
@@ -132,3 +133,14 @@ const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.local
     </div>
   </section>
 </Base>
+
+<style>
+  .inline-link {
+    color: var(--accent);
+    margin-left: 8px;
+    white-space: nowrap;
+  }
+  .inline-link:hover {
+    text-decoration: underline;
+  }
+</style>

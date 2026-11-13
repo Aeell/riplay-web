@@ -237,11 +237,19 @@ only after it has been brought over.
 
 ## Phase 2 — The Build (D13–D22)
 
-### D13 — `/stroj` **[SHIP]**
+### D13 — `/stroj` **[SHIP]** ⚠ built 2026-11-13, half of the done test blocked
 The machine as a page: **Wattsan 0404-mini, 2.2 kW spindle; stock RichAuto A11E DSP
 removed — LinuxCNC on Pi 5 + Flexi-HAL runs it** (owner facts, 2026-11-12), what is
 stock, what is retrofitted, what is broken. Config table is data, not prose.
+
+Built from `src/data/machine.ts`: nine configuration rows, four changes (control,
+kinematics, print head, chamber), and an explicit "what is not settled" list. Every row
+carries a `src` string, so a claim without proof is visible as such — today they all read
+"údaj majitele, 2026-11-12", and the page opens by saying that no photo or log exists yet.
+Unknown envelope, tolerance and materials stay `null` and render `doplní se`.
 **Done:** page published; every claim traceable to a photo or a log.
+**Blocked:** the traces are still owner statements. D5 (photos) and D20 (telemetry) turn
+them into artefacts; the data file is where that changes, not the page.
 
 ### D14 — Episode 0 **[SHIP]**
 "Proč pětioska" — the retrofit story so far: what works, what failed, what it cost.

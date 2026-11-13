@@ -244,6 +244,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        Meanwhile: batch work into a single deploy, and use `npm run preview:full` as the
        review loop — it costs nothing.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
+4. [x] D13 built, half blocked (2026-11-13) — `/stroj` renders from `src/data/machine.ts`.
+       Every row carries the artefact that proves it; right now that artefact is the owner's
+       statement, so the page says so in its first paragraph. Photos (D5) and machine telemetry
+       (D20) replace the `src` strings without touching the page.
 4. [x] D4 built, done test blocked (2026-11-13) — `/zakazka` is the photo-first intake with no
        backend: it assembles the message and hands it to the sender's mail app. Nothing goes to
        a server. The draft is kept in the browser's `localStorage`, the page says so in plain
