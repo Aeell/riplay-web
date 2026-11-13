@@ -245,8 +245,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        review loop — it costs nothing.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
 4. [x] D4 built, done test blocked (2026-11-13) — `/zakazka` is the photo-first intake with no
-       backend: it assembles the message and hands it to the sender's mail app, keeps the draft
-       in `localStorage`, uploads and stores nothing. **The done test cannot pass until D3b**,
+       backend: it assembles the message and hands it to the sender's mail app. Nothing goes to
+       a server. The draft is kept in the browser's `localStorage`, the page says so in plain
+       words, and a „Vymazat“ button erases it (the copy was corrected on review 2026-11-13 —
+       it had claimed the form stored nothing while saving a draft). **The done test cannot pass until D3b**,
        because "it arrives where you actually read" needs a readable inbox.
 4. [x] D2 done (2026-11-13) — `src/content.config.ts` defines typed `parts` and `episodes`
        collections with every unknown fact nullable by type; `/dil/[slug]` renders a passport

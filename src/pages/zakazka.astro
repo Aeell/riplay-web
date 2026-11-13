@@ -23,7 +23,7 @@ const email = shop.legal.email;
 
     <p class="lead" style="max-width:64ch">
       Nemusíš vědět, jak se to jmenuje ani z čeho to je. Stačí, co to má dělat a kam to má
-      pasovat. Fotky přiložíš v e-mailu — stránka nic nenahrává a nic si nepamatuje.
+      pasovat. Fotky přiložíš v e-mailu. Na server se nic neposílá.
     </p>
 
     <div class="intake">
@@ -64,7 +64,8 @@ const email = shop.legal.email;
         </div>
 
         <p class="hint mono">
-          Fotky: přilož je v e-mailu, až se otevře. Formulář sám nic neodesílá ani neukládá.
+          Fotky: přilož je v e-mailu, až se otevře. Rozepsaný text zůstává uložený jen v tomhle
+          prohlížeči, aby se při obnovení stránky nevytratil — nikam se neposílá. „Vymazat“ ho smaže.
         </p>
 
         <div class="actions">
@@ -72,6 +73,7 @@ const email = shop.legal.email;
             Otevřít v e-mailu →
           </a>
           <button class="btn ghost" type="button" id="intake-copy">Kopírovat text</button>
+          <button class="btn ghost" type="button" id="intake-clear">Vymazat</button>
           <span class="mono dim" id="intake-state" role="status" aria-live="polite"></span>
         </div>
       </form>
@@ -80,7 +82,8 @@ const email = shop.legal.email;
         <p class="eyebrow">náhled zprávy</p>
         <pre class="mono" id="intake-preview"></pre>
         <p class="mono dim">
-          Odejde z tvého e-mailu na <b>{email}</b>. Na nic jiného se data nepoužijí.
+          Odejde z tvého e-mailu na <b>{email}</b>. Server o tobě neví, dokud tu zprávu neodešleš
+          sám ze své schránky.
         </p>
       </aside>
     </div>
@@ -94,6 +97,7 @@ const email = shop.legal.email;
   const preview = $<HTMLElement>('intake-preview');
   const send = $<HTMLAnchorElement>('intake-send');
   const copy = $<HTMLButtonElement>('intake-copy');
+  const clear = $<HTMLButtonElement>('intake-clear');
   const state = $<HTMLElement>('intake-state');
 
   if (form && preview && send) {
@@ -162,6 +166,20 @@ const email = shop.legal.email;
     form.addEventListener('input', paint);
     form.addEventListener('submit', (e) => e.preventDefault());
     paint();
+
+    clear?.addEventListener('click', () => {
+      for (const el of Array.from(form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input, textarea'))) {
+        el.value = '';
+      }
+      paint();
+      // paint() re-saves the (now empty) draft, so the key is removed after it runs.
+      try {
+        localStorage.removeItem(KEY);
+      } catch {
+        /* nothing to remove if storage is blocked */
+      }
+      if (state) state.textContent = 'vymazáno z prohlížeče';
+    });
 
     copy?.addEventListener('click', async () => {
       try {

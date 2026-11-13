@@ -76,9 +76,11 @@ in an inbox the owner actually checks.
 WhatsApp/e-mail message with the photo attached by the sender — no backend, no
 broken promise, works from a phone in a garage.
 
-Built as a `mailto:` composer that says what it is: the page uploads and stores nothing, the
-draft survives a reload in `localStorage`, the message is previewed live, and a copy button
-covers clients that truncate long `mailto:` URLs. WhatsApp is omitted rather than faked —
+Built as a `mailto:` composer that says what it is: nothing is uploaded to any server, the
+message is previewed live, and a copy button covers clients that truncate long `mailto:` URLs.
+The draft survives a reload — and because it does, the copy names `localStorage` explicitly for
+what it is, and a **Vymazat** button erases it. Storing something while claiming to store
+nothing would have been a lie on the one page that asks strangers for their photos. WhatsApp is omitted rather than faked —
 there is no published phone number, and inventing one would break the constitution. The
 homepage CTA and the nav now point at the page instead of at an anchor.
 **Done:** submit a test commission from a phone; it arrives where you actually read.
