@@ -23,6 +23,11 @@ const TAU = Math.PI * 2;
 // 0.4 mm nozzle or a 3 mm cutter can resolve; a Ø50 circle needs 70 segments at this tolerance.
 export const ARC_TOLERANCE_MM = 0.02;
 
+// A file is untrusted input, so an arc can ask for an unbounded number of points (a 10 km radius
+// at 0.02 mm wants ~5 000). Past this the arc is simplified and the deviation it actually got is
+// written into the notes: a ceiling that stayed quiet would be a tolerance claim that is not true.
+export const ARC_MAX_SEGMENTS = 4096;
+
 // Plane → the two axes an arc lives in, in the order where a positive angle is a G3 move, and the
 // I/J letters that address them. G18 is the XZ plane addressed as (Z, X) and G19 is (Y, Z); that is
 // why the centre letters rotate with the plane instead of always being I and J.
@@ -82,11 +87,19 @@ function centreFromRadius(u0, v0, u1, v1, radius, clockwise) {
  */
 function arcPolyline({ u0, v0, u1, v1, cu, cv, clockwise, tolerance }) {
   const radius = Math.hypot(u0 - cu, v0 - cv);
+  if (!Number.isFinite(radius) || radius < 1e-9) {
+    // A centre on the start point defines no arc, only the point the file names.
+    return { pts: [{ u: u1, v: v1 }], segments: 0, chordError: 0, honoured: true };
+  }
   const a0 = Math.atan2(v0 - cv, u0 - cu);
   const a1 = Math.atan2(v1 - cv, u1 - cu);
   const sweep = sweepOf(a0, a1, clockwise);
-  const maxStep = radius > tolerance ? 2 * Math.acos(1 - tolerance / radius) : Math.PI / 4;
-  const segments = Math.min(4096, Math.max(1, Math.ceil(Math.abs(sweep) / maxStep)));
+  // Sagitta = r(1 − cos(step/2)); solve for the step that lands exactly on the tolerance. A radius
+  // no larger than the tolerance already fits inside it, so a quarter turn is one segment.
+  const maxStep = radius > tolerance ? 2 * Math.acos(1 - tolerance / radius) : Math.PI / 2;
+  const needed = Math.max(1, Math.ceil(Math.abs(sweep) / maxStep));
+  const segments = Math.min(needed, ARC_MAX_SEGMENTS);
+  const chordError = radius * (1 - Math.cos(Math.abs(sweep) / segments / 2));
   const pts = [];
   for (let k = 1; k <= segments; k += 1) {
     const angle = a0 + (sweep * k) / segments;
@@ -94,10 +107,11 @@ function arcPolyline({ u0, v0, u1, v1, cu, cv, clockwise, tolerance }) {
   }
   // Land exactly on the written endpoint: trigonometric drift must not move the part.
   pts[pts.length - 1] = { u: u1, v: v1 };
-  return { pts, sweep, radius, segments };
+  return { pts, segments, chordError, honoured: segments === needed };
 }
 
 export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC_TOLERANCE_MM } = {}) {
+  const tol = Number.isFinite(tolerance) && tolerance > 0 ? tolerance : ARC_TOLERANCE_MM;
   const layers = [];
   const stats = {
     lines: 0,
@@ -106,7 +120,7 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
     extrusion: 0,
     arcs: 0,
     arcSegments: 0,
-    arcTolerance: tolerance,
+    arcTolerance: tol,
     unsupported: [],
     truncated: false,
   };
@@ -254,11 +268,14 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
       continue;
     }
 
-    if (number === 90) absolute = true;
-    else if (number === 91) absolute = false;
-    else if (number === 92) {
+    if (number === 90 || number === 91) {
+      absolute = number === 90;
+      continue;
+    }
+    if (number === 92) {
       // G92 redefines the current position without moving. Without this, the next absolute move
-      // after a reset/counter change is measured from a stale position.
+      // after a reset/counter change is measured from a stale position; without the `continue`,
+      // G91 turns the same line into a move as well.
       if (words.X !== undefined) x = words.X * unit;
       if (words.Y !== undefined) y = words.Y * unit;
       if (words.Z !== undefined) z = words.Z * unit;
@@ -267,9 +284,9 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
         lastE = reset * unit;
         afterToolChange = false;
       }
-    } else if (number !== 0 && number !== 1 && number !== 2 && number !== 3) {
       continue;
     }
+    if (number !== 0 && number !== 1 && number !== 2 && number !== 3) continue;
 
     const isArc = number === 2 || number === 3;
 
@@ -283,6 +300,10 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
       trackZ(round(z));
     }
 
+    // The one place a move's endpoint is worked out: the arc and the path that follows it must
+    // end at the same point, so neither may compute it separately.
+    const nx = words.X !== undefined ? (absolute ? words.X * unit : fromX + words.X * unit) : fromX;
+    const ny = words.Y !== undefined ? (absolute ? words.Y * unit : fromY + words.Y * unit) : fromY;
     const hasXY = words.X !== undefined || words.Y !== undefined;
     const written = usesE ? words.E : words.U;
     let deposit = 0;
@@ -303,20 +324,22 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
     if (isArc) {
       stats.arcs += 1;
       const axes = PLANES[plane];
-      const toWorld = (u, v) => (plane === 'XY'
-        ? { x: u, y: v }
-        : plane === 'XZ'
-          ? { x: v, y: fromY } // XZ: Y is the plane's normal and does not move
-          : { x: fromX, y: u }); // YZ: X is the normal
+      // PLANES is the only place a plane's axes are written down: conversion in and back out both
+      // read it, so the start point, the end point and the projection cannot disagree. The axis not
+      // named by the plane is its normal and keeps its value throughout the arc.
+      const inPlane = (wx, wy, wz) => {
+        const world = { X: wx, Y: wy, Z: wz };
+        return { u: world[axes.u], v: world[axes.v] };
+      };
+      const toWorld = (u, v) => {
+        const world = { X: fromX, Y: fromY, Z: fromZ };
+        world[axes.u] = u;
+        world[axes.v] = v;
+        return { x: world.X, y: world.Y };
+      };
 
-      const startU = plane === 'XY' ? fromX : plane === 'XZ' ? fromZ : fromY;
-      const startV = plane === 'XY' ? fromY : plane === 'XZ' ? fromX : fromZ;
-      const endU = plane === 'XY' ? (words.X !== undefined ? (absolute ? words.X * unit : fromX + words.X * unit) : fromX)
-        : plane === 'XZ' ? z
-          : (words.Y !== undefined ? (absolute ? words.Y * unit : fromY + words.Y * unit) : fromY);
-      const endV = plane === 'XY' ? (words.Y !== undefined ? (absolute ? words.Y * unit : fromY + words.Y * unit) : fromY)
-        : plane === 'XZ' ? (words.X !== undefined ? (absolute ? words.X * unit : fromX + words.X * unit) : fromX)
-          : z;
+      const start = inPlane(fromX, fromY, fromZ);
+      const end = inPlane(nx, ny, z);
 
       const iWord = words[axes.i];
       const jWord = words[axes.j];
@@ -327,29 +350,32 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
         if (iWord !== undefined || jWord !== undefined) {
           note('G2/G3 s I/J i R — počítá se z R');
         }
-        centre = centreFromRadius(startU, startV, endU, endV, radiusWord * unit, number === 2);
+        centre = centreFromRadius(start.u, start.v, end.u, end.v, radiusWord * unit, number === 2);
       } else if (iWord !== undefined || jWord !== undefined) {
         centre = {
-          u: startU + (iWord ?? 0) * unit,
-          v: startV + (jWord ?? 0) * unit,
+          u: start.u + (iWord ?? 0) * unit,
+          v: start.v + (jWord ?? 0) * unit,
         };
       }
 
       if (!centre) {
-        // No usable centre: this is a straight move, and saying so is better than pretending.
-        note('G2/G3 bez středu nebo poloměru — kreslí se jako přímka');
-      } else if (plane !== 'XY') {
-        note(`G18/G19 (oblouk mimo rovinu XY) — kreslí se průmět do XY`);
-      }
-
-      if (centre) {
+        // No usable centre: this is a straight move, and saying so is better than pretending. An R
+        // that cannot define an arc (no chord, or shorter than half of it) is named as such.
+        note(radiusWord !== undefined
+          ? 'G2/G3 s R, které oblouk neurčuje — kreslí se jako přímka'
+          : 'G2/G3 bez středu nebo poloměru — kreslí se jako přímka');
+      } else {
+        if (plane !== 'XY') note('G18/G19 (oblouk mimo rovinu XY) — kreslí se průmět do XY');
         const arc = arcPolyline({
-          u0: startU, v0: startV, u1: endU, v1: endV,
+          u0: start.u, v0: start.v, u1: end.u, v1: end.v,
           cu: centre.u, cv: centre.v,
           clockwise: number === 2,
-          tolerance,
+          tolerance: tol,
         });
         stats.arcSegments += arc.segments;
+        if (!arc.honoured) {
+          note(`oblouk je zjednodušený — tětivy se od oblouku odchylují až ${arc.chordError.toFixed(2).replace('.', ',')} mm`);
+        }
         arcXY = arc.pts.map(({ u, v }) => toWorld(u, v));
       }
     }
@@ -358,8 +384,8 @@ export function parseGcode(text, { maxLines = DEFAULT_MAX_LINES, tolerance = ARC
 
     const px = fromX;
     const py = fromY;
-    x = words.X !== undefined ? (absolute ? words.X * unit : x + words.X * unit) : x;
-    y = words.Y !== undefined ? (absolute ? words.Y * unit : y + words.Y * unit) : y;
+    x = nx;
+    y = ny;
 
     // A move without positive deposit is travel: a retraction, an unretract, or a hop. Drawing it
     // would put a line where the machine put nothing, and counting it as filament would inflate

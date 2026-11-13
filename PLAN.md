@@ -444,7 +444,7 @@ from the true arc — 70 segments for a Ø50 circle. The tolerance is a parser o
 millimetres and says so in the notes; out-of-plane arcs are computed in their plane and drawn as
 the XY projection, a limit the page states rather than hides.
 
-**Verification:** `scripts/verify-gcode.mjs` — 49 checks (`npm run verify:gcode`), including
+**Verification:** `scripts/verify-gcode.mjs` — 55 checks (`npm run verify:gcode`), including
 the three failures above and the arc geometry as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
 **Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
@@ -705,7 +705,7 @@ output, and nothing is live — deploys are paused.
 **2026-11-13 · D17 arcs (G2/G3 as curves, G20, G18/G19).** The reader counted arcs and then drew
 the straight line between their endpoints: on screen the tool went somewhere the file never sent
 it. G2/G3 are now tessellated from I/J/K or R in the file's own plane, with a stated chord
-tolerance of 0.02 mm, and the page's limit list changed with the behaviour. 19 new checks compare
+tolerance of 0.02 mm, and the page's limit list changed with the behaviour. 25 new checks compare
 the drawn polyline against known circles — quarter arc, full circle, R minor and major, inches,
 and both out-of-plane planes — including a sagitta measured over every chord rather than trusting
 the formula that produced the points. Four of those checks failed on the first run; all four were
@@ -714,6 +714,17 @@ chord of 10 is a semicircle, where the sign of R selects no side), not the parse
 expectations were corrected to the geometry.
 **Not verified:** a real arc-heavy CAM file — our engine's slices contain no G2/G3 — so the
 geometry is proven against hand-written files with known numbers, not against a machine's output.
+
+**Review of that change, same day.** Four defects, all fixed: the arc's endpoint was computed twice
+— once inside the arc block, once for the path that follows it — from two copies of the same
+absolute/relative expressions, so a later change to one would have parted the curve from the path
+(one `nx`/`ny` now feeds both); the 4096-segment ceiling could break the 0.02 mm promise silently,
+and `tolerance: 0` made `stats` report a tolerance it never used (the value is validated, and when
+the ceiling is hit the note states the deviation actually drawn); the plane mapping existed twice,
+in `PLANES` and in hand-written ternaries, which is how axes get swapped (`PLANES` is the only
+source and both directions read it); and G92 under G91 both set the position and moved from it, a
+pre-existing bug found next door. Six new checks pin the relative-arc endpoint, both unusable-R
+messages, the ceiling's disclosure, the tolerance fallback and G92.
 
 ## Dependencies and risks
 

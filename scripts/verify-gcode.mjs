@@ -1,7 +1,7 @@
 // Verifies the G-code reader on hand-written files whose every number is known.
 // Run: npm run verify:gcode
 
-import { ARC_TOLERANCE_MM, parseGcode } from '../src/lib/gcode.mjs';
+import { ARC_MAX_SEGMENTS, ARC_TOLERANCE_MM, parseGcode } from '../src/lib/gcode.mjs';
 
 let failures = 0;
 const check = (name, condition, detail = '') => {
@@ -137,7 +137,8 @@ check('R<0 is the major arc', Math.abs(major.bounds.height - SAGITTA_MAJOR) < 0.
 const impossible = parseGcode(['G3 X10 Y0 R2 E1'].join('\n'));
 check('an R shorter than the chord is a line, and says so',
   impossible.layers[0]?.paths[0]?.pts.length === 2
-  && impossible.stats.unsupported.some((u) => u.includes('bez středu')), `${impossible.layers[0]?.paths[0]?.pts.length} pts`);
+  && impossible.stats.unsupported.some((u) => u.includes('R, které oblouk neurčuje')),
+  `${impossible.layers[0]?.paths[0]?.pts.length} pts`);
 
 // Tightening the tolerance must add segments, and the chord error must follow it.
 const coarse = parseGcode(['G2 I50 J0 E1'].join('\n'));
@@ -172,6 +173,36 @@ const yz = parseGcode(['G19', 'G0 X3 Y0 Z0', 'G3 Y10 Z0 J5 K0 E1'].join('\n'));
 check('G19 arcs are read in (Y, Z)',
   Math.abs(yz.bounds.width) < 1e-6 && Math.abs(yz.bounds.height - 10) < 1e-6,
   `${yz.bounds.width} × ${yz.bounds.height}`);
+
+// The endpoint is computed once: an arc under G91 must land where the same words move the path.
+const relArc = parseGcode(['G0 X10 Y0 Z0.2', 'G91', 'G3 X-10 Y10 I-10 J0 E1'].join('\n'));
+check('a relative arc lands where the relative move lands',
+  relArc.layers[0]?.paths[0]?.pts.at(-1).x === 0 && relArc.layers[0]?.paths[0]?.pts.at(-1).y === 10,
+  JSON.stringify(relArc.layers[0]?.paths[0]?.pts.at(-1)));
+
+// An arc with no centre and an R that cannot define one are each named for what they are.
+const noCentre = parseGcode(['G2 X10 Y0 E1'].join('\n'));
+check('an arc with no centre says so',
+  noCentre.stats.unsupported.some((u) => u.includes('bez středu')),
+  noCentre.stats.unsupported.join(' · '));
+const rCircle = parseGcode(['G2 X0 Y0 R5 E1'].join('\n'));
+check('an R with no chord says R cannot define it',
+  rCircle.stats.unsupported.some((u) => u.includes('R, které oblouk neurčuje')));
+
+// The segment ceiling is disclosed with the deviation it causes, never silent.
+const capped = parseGcode(['G2 I100000 J0 E1'].join('\n'));
+check('the segment ceiling is disclosed, with the deviation it caused',
+  capped.stats.arcSegments === ARC_MAX_SEGMENTS
+  && capped.stats.unsupported.some((u) => u.includes('zjednodušený')),
+  `${capped.stats.arcSegments} segments · ${capped.stats.unsupported.join(' · ')}`);
+check('a tolerance that is not a positive number falls back to the stated one',
+  parseGcode(['G2 I5 J0 E1'].join('\n'), { tolerance: 0 }).stats.arcTolerance === ARC_TOLERANCE_MM);
+
+// G92 sets a position; it is not a move, in either distance mode.
+const g92Relative = parseGcode(['G91', 'G92 X10 Y0', 'G1 X5 Y0 E1'].join('\n'));
+check('G92 under G91 does not also move',
+  g92Relative.layers[0]?.paths[0]?.pts.at(-1).x === 15,
+  `${g92Relative.layers[0]?.paths[0]?.pts.at(-1).x}`);
 
 const plain = parseGcode(['G0 X0 Y0 Z0.2', 'G1 X5 Y0 E1', 'G1 X5 Y5 E2'].join('\n'));
 check('a file without markers still renders', plain.layers.length === 1 && plain.layers[0].paths.length === 1);
