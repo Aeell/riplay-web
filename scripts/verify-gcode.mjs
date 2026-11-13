@@ -1,6 +1,7 @@
 // Verifies the G-code reader on hand-written files whose every number is known.
 // Run: npm run verify:gcode
 
+import { readFileSync } from 'node:fs';
 import { ARC_MAX_SEGMENTS, ARC_TOLERANCE_MM, parseGcode } from '../src/lib/gcode.mjs';
 
 let failures = 0;
@@ -236,6 +237,40 @@ check('the line ceiling stops a runaway file', huge.stats.truncated === true, `l
 
 const empty = parseGcode('');
 check('an empty file does not throw', empty.layers.length === 0 && empty.bounds === null);
+
+// ---------------------------------------------------------------- the sample the page ships
+// The page states this file's geometry, so the file and the page are checked together: an edit to
+// one that leaves the other describing something else fails here.
+const sample = parseGcode(readFileSync(new URL('../public/vrstvy/oblouky.gcode', import.meta.url), 'utf8'));
+check('the shipped arc sample has two 0.3 mm layers',
+  sample.stats.layers === 2 && sample.layers[0].z === 0.3 && sample.layers[1].z === 0.6,
+  sample.layers.map((l) => l.z).join(' / '));
+check('the shipped arc sample draws six paths, none of them as a chord',
+  sample.layers.every((layer) => layer.paths.length === 3) && pathCount(sample) === 6
+  && sample.layers.every((layer) => layer.paths.every((path) => path.pts.length > 2)),
+  `${pathCount(sample)} paths, ${sample.stats.arcs} arcs`);
+check('the shipped arc sample reads without caveats', sample.stats.unsupported.length === 0,
+  sample.stats.unsupported.join(' · '));
+check('the shipped arc sample has the 70 × 15 mm footprint the page states',
+  sample.bounds.width === 70 && sample.bounds.height === 15,
+  `${sample.bounds.width} × ${sample.bounds.height}`);
+
+const CIRCLES = [
+  [10, 0, 10], [40, 0, 5], [60, 10, 10],
+  [10, 0, 9.5], [40, 0, 4.5], [60, 10, 9.5],
+];
+check('every point in the shipped sample lies on the circle the page names',
+  sample.layers.flatMap((layer) => layer.paths).every((path, i) => {
+    const [cu, cv, r] = CIRCLES[i];
+    return path.pts.every((pt) => Math.abs(Math.hypot(pt.x - cu, pt.y - cv) - r) < 1e-6);
+  }),
+  sample.layers.flatMap((layer) => layer.paths).map((path) => path.pts.length).join(', '));
+const ends = sample.layers.map((layer) => layer.paths.map((path) => path.pts.at(-1)));
+check('the shipped sample ends its arcs where the file says',
+  ends[0][0].x === 0 && ends[0][0].y === 0
+  && ends[0][2].x === 70 && ends[0][2].y === 10
+  && ends[1][0].x === 0.5 && ends[1][2].x === 69.5 && ends[1][2].y === 10,
+  JSON.stringify(ends));
 
 console.log(failures ? `\n${failures} CHECK(S) FAILED` : '\nALL CHECKS PASSED');
 process.exit(failures ? 1 : 0);

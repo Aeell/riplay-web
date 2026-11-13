@@ -444,7 +444,15 @@ from the true arc — 70 segments for a Ø50 circle. The tolerance is a parser o
 millimetres and says so in the notes; out-of-plane arcs are computed in their plane and drawn as
 the XY projection, a limit the page states rather than hides.
 
-**Verification:** `scripts/verify-gcode.mjs` — 55 checks (`npm run verify:gcode`), including
+**The page shows the arcs, with their numbers.** The sliced sample contains no G2/G3, so the arc
+drawing would have been invisible to anyone opening the tool. The page now has a second button and
+ships `public/vrstvy/oblouky.gcode`: hand-written, two 0.3 mm layers, six arcs on stated circles
+(r 10 and Ø 10 on layer 0, the same 0.5 mm smaller on layer 1, plus one quarter written as R), a
+70 × 15 mm footprint, and no caveats from the reader. Its exact geometry — centres, radii,
+direction, footprint — is written next to the buttons, and `verify:gcode` parses that shipped file
+against the same numbers, so the page cannot go on describing a file that changed.
+
+**Verification:** `scripts/verify-gcode.mjs` — 61 checks (`npm run verify:gcode`), including
 the three failures above and the arc geometry as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
 **Not** verified against PrusaSlicer/Cura output, and not live — Netlify deploys are paused
@@ -705,7 +713,7 @@ output, and nothing is live — deploys are paused.
 **2026-11-13 · D17 arcs (G2/G3 as curves, G20, G18/G19).** The reader counted arcs and then drew
 the straight line between their endpoints: on screen the tool went somewhere the file never sent
 it. G2/G3 are now tessellated from I/J/K or R in the file's own plane, with a stated chord
-tolerance of 0.02 mm, and the page's limit list changed with the behaviour. 25 new checks compare
+tolerance of 0.02 mm, and the page's limit list changed with the behaviour. 31 new checks compare
 the drawn polyline against known circles — quarter arc, full circle, R minor and major, inches,
 and both out-of-plane planes — including a sagitta measured over every chord rather than trusting
 the formula that produced the points. Four of those checks failed on the first run; all four were

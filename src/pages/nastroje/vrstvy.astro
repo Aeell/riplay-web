@@ -39,12 +39,26 @@ import { webApplication } from '../../lib/seo';
         </label>
 
         <div class="demo">
-          <button class="btn btn-quiet" type="button" id="g-demo">Načíst ukázku</button>
+          <div class="demo-actions">
+            <button class="btn btn-quiet" type="button" id="g-demo">Načíst ukázku</button>
+            <button class="btn btn-quiet" type="button" id="g-demo-arcs">Načíst oblouky</button>
+          </div>
           <p class="mono dim">
-            Ukázka z našeho sliceru: destička 30 × 20 × 4 mm s otvorem Ø6 a lemem,
+            <b>Ukázka ze sliceru:</b> destička 30 × 20 × 4 mm s otvorem Ø6 a lemem,
             13 vrstev po 0,3 mm. Dráhy jsou opravdové, ale <b>netisklo se</b> — a soubor je
             v dialektu Klipperu, na LinuxCNC ho teprve přepíše postprocesor. Můžeš si ho
-            <a href="/vrstvy/ukazka.gcode" download>stáhnout</a> a otevřít ve svém.
+            <a href="/vrstvy/ukazka.gcode" download>stáhnout</a> a otevřít ve svém. Oblouky
+            v něm nejsou žádné, proto druhá ukázka.
+          </p>
+          <p class="mono dim">
+            <b>Ukázka oblouků:</b> ručně psaný soubor, ne výřez ze sliceru — dvě vrstvy po
+            0,3 mm, vše v milimetrech a v rovině G17, půdorys 70 × 15 mm. Vrstva 1: půlkruh
+            r 10 se středem (10, 0), kružnice Ø 10 se středem (40, 0), čtvrtkruh r 10 zapsaný
+            přes <span class="mono">R</span> se středem (60, 10). Vrstva 2: tytéž tvary o 0,5 mm
+            menší — r 9,5, Ø 9 a r 9,5. Každý oblouk je v datech i na obrazovce kružnice:
+            tětiva se od ní liší nejvýš o 0,02 mm. Nic z toho se netisklo; kromě drah tomu
+            chybí lem, výplň i retrakce. Můžeš si ho
+            <a href="/vrstvy/oblouky.gcode" download>stáhnout</a>.
           </p>
         </div>
 
@@ -64,7 +78,7 @@ import { webApplication } from '../../lib/seo';
         <ToolpathViewer
           controls
           minHeight={460}
-          hint="přetáhni .gcode sem — nebo si načti ukázku"
+          hint="přetáhni .gcode sem — nebo si načti ukázku či oblouky"
         />
       </div>
     </div>
@@ -184,22 +198,27 @@ import { webApplication } from '../../lib/seo';
     if (file) handleFile(file);
   });
 
-  // A tool that opens empty is a tool nobody tries. The sample is a real slice from the
-  // workshop's own engine, shipped as a file (not baked into the page) and labelled as a demo.
-  $<HTMLButtonElement>('g-demo')?.addEventListener('click', async (event) => {
-    const button = event.currentTarget as HTMLButtonElement;
+  // A tool that opens empty is a tool nobody tries. Both samples ship as files (not baked into
+  // the page), are labelled as demos, and are fetched only when asked for.
+  async function loadSample(button: HTMLButtonElement, path: string) {
     button.disabled = true;
     if (error) error.textContent = '';
     try {
-      const response = await fetch('/vrstvy/ukazka.gcode');
+      const response = await fetch(path);
       if (!response.ok) throw new Error(String(response.status));
-      load('ukazka.gcode', await response.text());
+      load(path.split('/').pop() ?? path, await response.text());
     } catch {
       if (error) error.textContent = 'ukázku se nepodařilo načíst — přetáhni si vlastní soubor';
     } finally {
       button.disabled = false;
     }
-  });
+  }
+
+  for (const [id, path] of [['g-demo', '/vrstvy/ukazka.gcode'], ['g-demo-arcs', '/vrstvy/oblouky.gcode']]) {
+    $<HTMLButtonElement>(id)?.addEventListener('click', (event) => {
+      void loadSample(event.currentTarget as HTMLButtonElement, path);
+    });
+  }
 
   drop?.addEventListener('dragover', (event) => {
     event.preventDefault();
@@ -299,6 +318,11 @@ import { webApplication } from '../../lib/seo';
   .demo p b {
     color: var(--ink);
     font-weight: 500;
+  }
+  .demo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   .demo .btn[disabled] {
     opacity: 0.55;
