@@ -237,6 +237,11 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 
 1. [x] DNS: done 2026-11-11 — `riplay.cz` + `www` live on Netlify, valid cert covering
    both names, §2. IPv6 still unverified: no v6 route on the laptop.
+2. [x] D15 prepared, not published (2026-11-13) — `~/Projects/riplay-slicer`, branch
+       `riplay-spine`, local commit `ba42bbe`: honest M0 README (upstream manual kept as
+       `README.upstream.md`), six tests holding the dialect claims (`6/6 OK`), CI on 3.11/3.13,
+       `rtree` declared, pycache purged. Publishing is the owner's step; until the repo is public
+       the claim is "tests pass locally", never "CI green".
 2. [ ] **Deploys paused by credits (2026-11-13), not a broken hook.** Nothing to fix in the
        dashboard: the 300 monthly credits are spent. Wait for the cycle reset, buy a pack, or
        move hosting per `DEPLOY.md`. Asked Netlify support 2026-11-13: a courtesy grant, a

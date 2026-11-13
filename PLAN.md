@@ -269,12 +269,32 @@ definition of a live episode shared by index and route (`isLive()`), a schema ru
 published episode without a date a build failure, and one `.prose` block in `global.css` instead of
 two divergent copies. The guarantee is now testable, and was tested by trying to break it.
 
-### D15 — Slicer repo **[SHIP]**
+### D15 — Slicer repo **[SHIP]** ⚠ prepared 2026-11-13, publishing is the owner's call
 `riplay-slicer` public: README with an honest status line, license decision, short
 architecture note, CI running the test suite. The repo **name** keeps the word "slicer"
 (search term, the taunt); the README **defines** it as a 5-axis 3D printing solution —
 see `docs/research-slicer-fork.md` §2 and concept §3.
+
+Prepared in `~/Projects/riplay-slicer` (branch `riplay-spine`, local commit `ba42bbe`), not
+pushed anywhere:
+
+- **README rewritten** around an M0 status line — "it slices, and it has not printed anything on
+  the real machine yet" — naming what it does and refusing what it does not (5-axis chunking, bead
+  model, collision checking, a real print). Upstream's manual is preserved verbatim as
+  `README.upstream.md`, so Fractal Cortex's attribution and its copyright survive the rewrite.
+- **Six tests where there were none**: the bundled model slices headlessly, engine output carries
+  `;Layer`/`;Shell`, extrusion lands on `U` with no `E` left, the dialect drops Klipper's header
+  (`home_ab`, `Z_TILT_ADJUST`, `M84`), keeps `M104/M109/M140/M190`, has no `G28`, ends on `M2`,
+  and the post alone maps a hand-written engine file. `6/6 OK` locally, ~2 min because it runs
+  the real engine.
+- **CI** (`.github/workflows/ci.yml`) runs that suite on Python 3.11 and 3.13.
+- **`rtree` declared in `requirements.txt`**: trimesh imports it lazily at slice time, so a clean
+  CI machine would have failed on the first run. Found by running the suite, not by reading.
+- Tracked `__pycache__/*.pyc` removed, `.gitignore` added, empty `__init__.py` dropped.
+
 **Done:** repo public, CI green, README does not overclaim.
+**Remaining step is the owner's:** create the GitHub repo and push `riplay-spine`. Until then the
+honest statement is "tests pass locally", not "CI is green" — no CI has run yet.
 
 ### D16 — Slicer spine
 Mesh import + 2.5D slicing to a toolpath, CLI, tests on a known model. The spine is a
