@@ -551,6 +551,28 @@ Behaviour was checked afterwards, not assumed: the demo still loads 13 layers wi
 per layer and ~37 000 painted pixels, the Replay still reaches 8 layers, index advancing, ~46 000
 painted pixels, and the part page's Replay behaves the same as the homepage's.
 
+**2026-11-13 · third pass, the component itself.** Read `<toolpath-viewer>`, the toolbox page and
+the Replay as one system. Five edge cases and one regression:
+
+1. **An empty layer set left a lie on screen.** A file with no toolpaths kept the previous drawing
+   while the bar said "vrstva —". An empty set now clears the canvas, restores the hint, hides the
+   scrubber — and the page hides the readout that belonged to the other file.
+2. **`show(NaN)` threw** (`layers[NaN]` is undefined). Non-finite input is clamped to the first
+   layer now.
+3. **`data-interval` of `""` or `0` meant a 0 ms interval** — a tight loop through every layer. It
+   is floored at 60 ms with a sane default.
+4. **A window resize listener was the wrong tool.** This element is sized by the layout around it
+   (a grid column, or laid over the Replay's drawing), so it now observes itself; after a viewport
+   change on the homepage the canvas measured 743 × 485 against the SVG's 743 × 485.
+5. **`next()`/`prev()` were public API that nothing called** — the buttons use `show()` directly.
+   Removed, so the element exposes `setLayers`, `show`, `play`, `stop` and one event.
+6. **Regression from the earlier rewrite:** `.btn-quiet` had only ever been defined per page, so
+   the demo button silently lost its quiet styling when that page was rewritten. It is one rule in
+   `global.css` now, shared by the toolbox, the viewer and the font tool.
+
+Re-entry was checked rather than assumed: the Replay loads nothing until the print stage is
+opened, stops stepping when the stage is left, and starts the build over when it is opened again.
+
 **What this review did not cover:** every browser check ran in a hidden preview tab
 (`visibilityState: hidden`), where CSS transitions and timers are throttled. The print stack was
 verified by painted pixels (51 904) and the note text, not by watching the animation play on a

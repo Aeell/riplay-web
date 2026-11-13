@@ -130,6 +130,10 @@ h1 {
 }
 .btn:hover { background: var(--accent); color: #0b0b0c; }
 
+/* A secondary action: same shape, quieter ink. Shared, because two pages and the viewer use it. */
+.btn-quiet { border-color: var(--line); color: var(--dim); }
+.btn-quiet:hover { background: var(--line); color: var(--ink); }
+
 /* ── sheets ───────────────────────────────────────────── */
 
 .sheet { border-top: 1px solid var(--line); padding: clamp(40px, 6vw, 72px) 0; }

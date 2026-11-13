@@ -53,7 +53,6 @@ import ToolpathViewer from '../../components/ToolpathViewer.astro';
           <div><dt>drah v této vrstvě</dt><dd id="r-paths">—</dd></div>
           <div><dt>extruze celkem</dt><dd id="r-extrusion">—</dd></div>
           <div><dt>půdorys</dt><dd id="r-bounds">—</dd></div>
-          <div><dt>řádků</dt><dd id="r-lines">—</dd></div>
         </dl>
 
         <p class="mono dim" id="g-notes" hidden></p>
@@ -107,7 +106,6 @@ import ToolpathViewer from '../../components/ToolpathViewer.astro';
 
   const fileInput = $<HTMLInputElement>('g-file');
   const drop = $<HTMLElement>('g-drop');
-  const state = $<HTMLElement>('g-state');
   const error = $<HTMLElement>('g-error');
   const readout = $<HTMLElement>('g-readout');
   const notes = $<HTMLElement>('g-notes');
@@ -134,18 +132,22 @@ import ToolpathViewer from '../../components/ToolpathViewer.astro';
     if (error) error.textContent = '';
     const result = parseGcode(text);
     if (!result.layers.length) {
+      // Whatever was on screen belonged to another file: clear it rather than leave a picture
+      // that no longer matches what the user just picked.
+      viewer?.setLayers([]);
+      readout?.setAttribute('hidden', '');
+      setText('g-state', `${name} · nic k nakreslení`);
       if (error) error.textContent = 'v souboru nejsou žádné dráhy G0/G1 se souřadnicemi';
       return;
     }
 
     viewer?.setLayers(result.layers, result.bounds);
 
-    if (state) state.textContent = `${name} · ${result.stats.layers} vrstev · ${result.stats.lines} řádků`;
+    setText('g-state', `${name} · ${result.stats.lines.toLocaleString('cs-CZ')} řádků`);
     readout?.removeAttribute('hidden');
     setText('r-layers', String(result.stats.layers));
     setText('r-extrusion', `${Math.round(result.stats.extrusion).toLocaleString('cs-CZ')} mm`);
     setText('r-bounds', result.bounds ? `${fmt(result.bounds.width)} × ${fmt(result.bounds.height)} mm` : '—');
-    setText('r-lines', String(result.stats.lines));
 
     if (notes) {
       notes.textContent = caveatOf(result.stats);
@@ -195,7 +197,10 @@ import ToolpathViewer from '../../components/ToolpathViewer.astro';
     event.preventDefault();
     drop.classList.add('is-over');
   });
-  drop?.addEventListener('dragleave', () => drop.classList.remove('is-over'));
+  drop?.addEventListener('dragleave', (event) => {
+    // dragleave also fires when crossing a child; only a real exit should drop the highlight
+    if (!drop.contains(event.relatedTarget as Node | null)) drop.classList.remove('is-over');
+  });
   drop?.addEventListener('drop', (event) => {
     event.preventDefault();
     drop.classList.remove('is-over');
