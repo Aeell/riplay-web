@@ -352,7 +352,7 @@ the three failures above as regression tests. Browser check on `127.0.0.1:4331`:
 (§5 of the handoff).
 **Done:** a real sliced model is scrubbable in the browser.
 
-### D18 — One engine, two uses — **half done 2026-11-13**, the other half needs a printed part
+### D18 — One engine, two uses — **done 2026-11-13**
 Point the site's Replay at the slicer viewer for a printed part.
 
 **What now happens:** `src/lib/layer-draw.mjs` is one renderer (fit, flip Y, paint infill under
@@ -374,10 +374,17 @@ carries the sample badge. When D16 lands: regenerate the JSON from that part's g
 (`npm run sample:replay -- <file> <layers> <step>`), point the part page at it, and drop the
 sample badge there.
 
-**Also missing, deliberately:** the two do not share the whole component, only the renderer. The
-chrome differs because the jobs differ — the homepage is a six-stage story of a job, the toolbox
-is a layer scrubber over a file you brought. Forcing one component over both would have made each
-worse.
+**The component, not just the renderer (same day).** `src/components/ToolpathViewer.astro` plus
+`src/lib/toolpath-viewer.ts` is one `<toolpath-viewer>` element that owns the canvas, the scrubber
+(slider, layer label, prev/next) and the print animation. The two pages now contain no drawing
+code at all: the toolbox hands it a parsed file and listens for `layerchange`; the Replay hands it
+the reduced sample and calls `play()`. What differs between the pages is only which chrome they
+show — the element takes `controls` or `stack`. Cost: the homepage went from 6.4 to 8.9 KB gzipped
+because the element is inlined there, and the separate 1.1 KB Replay chunk disappeared.
+
+**Still missing (not the component's job):** the Replay still shows the sample, because nothing has
+been printed on the real machine (D16). When it is: `npm run sample:replay -- <file> <layers>
+<step>`, point the part page at it, drop the sample badge there.
 
 **Done:** the homepage replay and the slicer preview draw with the same renderer.
 
@@ -526,6 +533,23 @@ had written it. Six things were silently wrong and two were dead weight:
 
 Still approximate, and said so on the page: arcs draw as their endpoint, nothing is simulated, and
 a file without layer markers gets layer boundaries guessed from Z.
+
+**2026-11-13 · D18, extracting the shared component.** Three defects, each caught by building or
+looking rather than by reading:
+
+1. **The build broke** importing the custom-element module from the component's frontmatter: Astro
+   prerendered it in Node, where `customElements` does not exist. Registration moved to a client
+   script, and the module now guards for environments without it.
+2. **The overlay canvas measured 279 px inside a 364 px frame.** The component's grid row sized
+   itself to its content instead of the box it was covering. It is absolutely positioned inside
+   the drawn area now — measured 558 × 364 against the SVG's 558 × 364.
+3. **Rewriting the page silently dropped its `.field`/`.readout` styles**, which had only ever
+   lived in that page. They are back, expressed in the project's tokens, so the file input and the
+   readout read as designed again.
+
+Behaviour was checked afterwards, not assumed: the demo still loads 13 layers with 74 → 57 paths
+per layer and ~37 000 painted pixels, the Replay still reaches 8 layers, index advancing, ~46 000
+painted pixels, and the part page's Replay behaves the same as the homepage's.
 
 **What this review did not cover:** every browser check ran in a hidden preview tab
 (`visibilityState: hidden`), where CSS transitions and timers are throttled. The print stack was

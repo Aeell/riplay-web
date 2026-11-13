@@ -181,7 +181,7 @@ h1 {
 .replay svg { display: block; width: 100%; height: auto; }
 
 /* The print stage is painted on a canvas from real toolpaths; it sits exactly over the drawing. */
-.replay-frame canvas.rp-print {
+.replay-frame toolpath-viewer.rp-print {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -190,7 +190,16 @@ h1 {
   transition: opacity 0.45s ease;
   pointer-events: none;
 }
-.replay[data-stage="4"] canvas.rp-print { opacity: 1; }
+/* It sits over the drawing: fill that box exactly, and do not paint a panel behind it. */
+.replay-frame toolpath-viewer.rp-print { display: block; }
+.replay-frame toolpath-viewer.rp-print .tpv {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  background: transparent;
+  min-height: 0;
+}
+.replay[data-stage="4"] toolpath-viewer.rp-print { opacity: 1; }
 
 .rp-print-note {
   position: absolute;

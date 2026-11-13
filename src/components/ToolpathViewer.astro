@@ -1,0 +1,125 @@
+---
+// The one place a toolpath is drawn: canvas + optional scrubber.
+// Logic lives in src/lib/toolpath-viewer.ts; this file is the markup and the ink.
+
+interface Props {
+  /** show the scrubber (slider, layer label, prev/next) */
+  controls?: boolean;
+  /** paint layers cumulatively, like a print in progress */
+  stack?: boolean;
+  /** may be told to play() by the page */
+  interval?: number;
+  label?: string;
+  hint?: string;
+  /** shortest the canvas may get, in px */
+  minHeight?: number;
+  class?: string;
+}
+
+const {
+  controls = false,
+  stack = false,
+  interval = 120,
+  label = 'Náhled drah nástroje',
+  hint = '',
+  minHeight = 260,
+  class: className,
+} = Astro.props;
+---
+
+<toolpath-viewer
+  class={className}
+  style={`--tpv-min: ${minHeight}px`}
+  data-controls={controls ? '' : null}
+  data-stack={stack ? '' : null}
+  data-interval={String(interval)}
+>
+  <div class="tpv">
+    <canvas role="img" aria-label={label}></canvas>
+    <p class="tpv-hint mono dim" data-hint hidden={!hint}>{hint}</p>
+  </div>
+
+  {controls && (
+    <div class="tpv-bar" data-bar hidden>
+      <div class="tpv-head">
+        <b class="mono" data-layer>vrstva —</b>
+        <span class="mono dim" data-z>z — mm</span>
+      </div>
+      <input class="tpv-range" type="range" min="0" max="0" step="1" value="0" data-range
+        aria-label="Vrstva" />
+      <div class="tpv-buttons">
+        <button class="btn btn-quiet" type="button" data-prev>← předchozí</button>
+        <button class="btn btn-quiet" type="button" data-next>další →</button>
+      </div>
+    </div>
+  )}
+</toolpath-viewer>
+
+<script>
+  // Browser-only: registering a custom element on the server is not a thing.
+  import '../lib/toolpath-viewer';
+</script>
+
+<style>
+  toolpath-viewer {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+  }
+  .tpv {
+    position: relative;
+    height: 100%;
+    min-height: var(--tpv-min, 260px);
+    background: var(--panel);
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .tpv-hint {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    font-size: 12px;
+    text-align: center;
+    padding: 0 16px;
+  }
+  .tpv-hint[hidden] {
+    display: none;
+  }
+  .tpv-bar {
+    display: grid;
+    gap: 10px;
+  }
+  .tpv-bar[hidden] {
+    display: none;
+  }
+  .tpv-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .tpv-head b {
+    font-weight: 500;
+  }
+  .tpv-range {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .tpv-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  .btn-quiet {
+    border-color: var(--line);
+    color: var(--dim);
+  }
+  .btn-quiet:hover {
+    background: var(--line);
+    color: var(--ink);
+  }
+</style>

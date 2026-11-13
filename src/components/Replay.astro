@@ -1,5 +1,6 @@
 ---
 import { replay as sample } from '../data/replay';
+import ToolpathViewer from './ToolpathViewer.astro';
 
 // The component draws one assembly and is driven by whatever data it is given, so a real
 // part page and the homepage sample share the same visual. Defaults are the sample.
@@ -137,7 +138,7 @@ const {
       </g>
     </svg>
 
-    <canvas class="rp-print" data-print-canvas aria-hidden="true"></canvas>
+    <ToolpathViewer stack interval={140} class="rp-print" label="Dráhy tisku vzorového dílu" />
     <p class="rp-print-note mono" data-print-note hidden></p>
   </div>
 
@@ -159,7 +160,7 @@ const {
 </div>
 
 <script>
-  import { fitTransform, paintStack, pathBounds, sizeCanvas } from '../lib/layer-draw.mjs';
+  import type { ToolpathViewerElement, ViewerLayer } from '../lib/toolpath-viewer';
 
   const LAYERS: [string, number, number][] = [
     ['.l-cad', 1, 5],
@@ -168,91 +169,51 @@ const {
     ['.l-done', 5, 5],
   ];
 
-  // Real toolpaths from a real slice, reduced and fetched only when the print stage is reached:
-  // the homepage must not carry 12 KB of G-code that most visitors never look at.
+  // Real toolpaths from a real slice, fetched only when the print stage is reached: the homepage
+  // must not carry G-code most visitors never look at.
   const SAMPLE_URL = '/vrstvy/vzor.json';
-  type Pt = { x: number; y: number };
-  type PrintLayer = { z: number; paths: { kind: 'perimeter' | 'infill'; pts: Pt[] }[] };
+  type RawLayer = { z: number; paths: { k: string; pts: number[] }[] };
 
   document.querySelectorAll<HTMLElement>('.replay').forEach((root) => {
     const range = root.querySelector<HTMLInputElement>('.rp-range');
     const ticks = Array.from(root.querySelectorAll<HTMLButtonElement>('.rp-ticks button'));
     const nowK = root.querySelector<HTMLElement>('[data-now-k]');
     const nowN = root.querySelector<HTMLElement>('[data-now-n]');
+    const viewer = root.querySelector<ToolpathViewerElement>('toolpath-viewer');
+    const note = root.querySelector<HTMLElement>('[data-print-note]');
     if (!range || !ticks.length) return;
 
-    const canvas = root.querySelector<HTMLCanvasElement>('[data-print-canvas]');
-    const note = root.querySelector<HTMLElement>('[data-print-note]');
-    let stack: PrintLayer[] | null = null;
+    let loaded = false;
     let loading = false;
-    let timer = 0;
-    let built = 0;
-
-    const paintPrint = () => {
-      if (!canvas || !stack || !stack.length) return;
-      const surface = sizeCanvas(canvas);
-      if (!surface) return;
-      const { ctx, width, height } = surface;
-      ctx.clearRect(0, 0, width, height);
-      const t = fitTransform(pathBounds(stack.flatMap((layer) => layer.paths)), width, height, 10);
-      if (!t) return;
-      paintStack(ctx, stack, built, t, { lineWidth: 0.9 });
-    };
-
-    const stopPrint = () => {
-      if (timer) window.clearInterval(timer);
-      timer = 0;
-    };
-
-    const startPrint = () => {
-      if (!canvas || timer) return;
-      if (!stack) {
-        loadSample();
-        return;
-      }
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        built = stack.length - 1;
-        paintPrint();
-        return;
-      }
-      built = 0;
-      paintPrint();
-      timer = window.setInterval(() => {
-        built += 1;
-        if (built >= stack.length - 1) {
-          built = stack.length - 1;
-          paintPrint();
-          stopPrint();
-          return;
-        }
-        paintPrint();
-      }, 110);
-    };
 
     const loadSample = () => {
-      if (loading || stack) return;
+      if (loading || loaded) return;
       loading = true;
       fetch(SAMPLE_URL)
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-        .then((data: { layers: { z: number; paths: { k: string; pts: number[] }[] }[] }) => {
-          stack = data.layers.map((layer) => ({
+        .then((data: { layers: RawLayer[] }) => {
+          const layers: ViewerLayer[] = data.layers.map((layer) => ({
             z: layer.z,
             paths: layer.paths.map((path) => {
-              const pts: Pt[] = [];
-              for (let i = 0; i < path.pts.length; i += 2) pts.push({ x: path.pts[i], y: path.pts[i + 1] });
+              const pts = [];
+              for (let i = 0; i < path.pts.length; i += 2) {
+                pts.push({ x: path.pts[i], y: path.pts[i + 1] });
+              }
               return { kind: path.k === 'p' ? ('perimeter' as const) : ('infill' as const), pts };
             }),
           }));
+          loaded = true;
+          viewer?.setLayers(layers);
           if (note) {
-            note.textContent = `dráhy z opravdového řezu · ${stack.length} vrstev, zjednodušeno`;
+            note.textContent = `dráhy z opravdového řezu · ${layers.length} vrstev, zjednodušeno`;
             note.hidden = false;
           }
-          if (root.dataset.stage === '4') startPrint();
+          if (root.dataset.stage === '4') viewer?.play();
         })
         .catch(() => {
           // Say it failed rather than show an empty stage that looks like a finished drawing.
           // Only when nothing loaded: a later paint error must not overwrite a true note.
-          if (note && !stack) {
+          if (note && !loaded) {
             note.textContent = 'dráhy se nepodařilo načíst';
             note.hidden = false;
           }
@@ -269,8 +230,12 @@ const {
       for (const [sel, min, max] of LAYERS) {
         root.querySelector(sel)?.classList.toggle('is-on', s >= min && s <= max);
       }
-      if (s === 4) startPrint();
-      else stopPrint();
+      if (s === 4) {
+        if (loaded) viewer?.play();
+        else loadSample();
+      } else {
+        viewer?.stop();
+      }
       ticks.forEach((b, i) => b.setAttribute('aria-current', i === s ? 'true' : 'false'));
       if (nowK) nowK.textContent = ticks[s].dataset.k ?? '';
       if (nowN) nowN.textContent = ticks[s].dataset.n ?? '';
@@ -278,9 +243,6 @@ const {
 
     range.addEventListener('input', () => paint(Number(range.value)));
     ticks.forEach((b, i) => b.addEventListener('click', () => paint(i)));
-    window.addEventListener('resize', () => {
-      if (root.dataset.stage === '4') paintPrint();
-    });
     paint(0);
   });
 </script>

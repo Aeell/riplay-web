@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import ToolpathViewer from '../../components/ToolpathViewer.astro';
 ---
 
 <Base
@@ -47,21 +48,9 @@ import Icon from '../../components/Icon.astro';
 
         <p class="mono" id="g-error" role="status" aria-live="polite"></p>
 
-        <div class="scrub" hidden id="g-scrub">
-          <div class="scrub-head">
-            <b class="mono" id="g-layer">vrstva —</b>
-            <span class="mono dim" id="g-z">z — mm</span>
-          </div>
-          <input type="range" id="g-range" min="0" max="0" value="0" step="1" aria-label="Vrstva" />
-          <div class="steppers">
-            <button class="btn btn-quiet" type="button" id="g-prev">← předchozí</button>
-            <button class="btn btn-quiet" type="button" id="g-next">další →</button>
-          </div>
-        </div>
-
         <dl class="readout" id="g-readout" hidden>
           <div><dt>vrstev</dt><dd id="r-layers">—</dd></div>
-          <div><dt>draha v této vrstvě</dt><dd id="r-paths">—</dd></div>
+          <div><dt>drah v této vrstvě</dt><dd id="r-paths">—</dd></div>
           <div><dt>extruze celkem</dt><dd id="r-extrusion">—</dd></div>
           <div><dt>půdorys</dt><dd id="r-bounds">—</dd></div>
           <div><dt>řádků</dt><dd id="r-lines">—</dd></div>
@@ -70,9 +59,12 @@ import Icon from '../../components/Icon.astro';
         <p class="mono dim" id="g-notes" hidden></p>
       </div>
 
-      <div class="canvas-wrap">
-        <canvas id="g-canvas" aria-label="Náhled vrstvy G-code"></canvas>
-        <p class="mono dim hint" id="g-hint">přetáhni .gcode sem — nebo si načti ukázku</p>
+      <div class="stage">
+        <ToolpathViewer
+          controls
+          minHeight={460}
+          hint="přetáhni .gcode sem — nebo si načti ukázku"
+        />
       </div>
     </div>
   </section>
@@ -108,24 +100,18 @@ import Icon from '../../components/Icon.astro';
 
 <script>
   import { parseGcode } from '../../lib/gcode.mjs';
-  import { fitTransform, paintLayer, sizeCanvas } from '../../lib/layer-draw.mjs';
+  import type { ToolpathViewerElement } from '../../lib/toolpath-viewer';
 
   const MAX_BYTES = 40 * 1024 * 1024;
   const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
 
   const fileInput = $<HTMLInputElement>('g-file');
   const drop = $<HTMLElement>('g-drop');
-  const canvas = $<HTMLCanvasElement>('g-canvas');
-  const hint = $<HTMLElement>('g-hint');
   const state = $<HTMLElement>('g-state');
   const error = $<HTMLElement>('g-error');
-  const scrub = $<HTMLElement>('g-scrub');
-  const range = $<HTMLInputElement>('g-range');
   const readout = $<HTMLElement>('g-readout');
   const notes = $<HTMLElement>('g-notes');
-
-  let parsed: ReturnType<typeof parseGcode> | null = null;
-  let index = 0;
+  const viewer = document.querySelector<ToolpathViewerElement>('toolpath-viewer');
 
   // Millimetres are the whole point here: a 108.36 mm part must not read as "108".
   const fmt = (n: number) => (Number.isFinite(n) ? n.toFixed(2) : '—');
@@ -133,28 +119,6 @@ import Icon from '../../components/Icon.astro';
     const el = document.getElementById(id);
     if (el) el.textContent = value;
   };
-
-  function draw() {
-    if (!canvas || !parsed || !parsed.layers.length) return;
-    const surface = sizeCanvas(canvas);
-    if (!surface) return;
-    const { ctx, width, height } = surface;
-    ctx.clearRect(0, 0, width, height);
-    const t = fitTransform(parsed.bounds, width, height, 24);
-    if (!t) return;
-    paintLayer(ctx, parsed.layers[index], t);
-  }
-
-  function show(i: number) {
-    if (!parsed || !parsed.layers.length) return;
-    index = Math.max(0, Math.min(parsed.layers.length - 1, i));
-    if (range) range.value = String(index);
-    const layer = parsed.layers[index];
-    setText('g-layer', `vrstva ${index + 1} / ${parsed.layers.length}`);
-    setText('g-z', `z ${fmt(layer.z)} mm`);
-    setText('r-paths', String(layer.paths.length));
-    draw();
-  }
 
   /** What the reader could not do with this file, in the reader's own words. */
   function caveatOf(stats: ReturnType<typeof parseGcode>['stats']) {
@@ -173,13 +137,11 @@ import Icon from '../../components/Icon.astro';
       if (error) error.textContent = 'v souboru nejsou žádné dráhy G0/G1 se souřadnicemi';
       return;
     }
-    parsed = result;
-    index = 0;
-    if (state) state.textContent = `${name} · ${result.stats.layers} vrstev · ${result.stats.lines} řádků`;
-    scrub?.removeAttribute('hidden');
-    readout?.removeAttribute('hidden');
-    hint?.setAttribute('hidden', '');
 
+    viewer?.setLayers(result.layers, result.bounds);
+
+    if (state) state.textContent = `${name} · ${result.stats.layers} vrstev · ${result.stats.lines} řádků`;
+    readout?.removeAttribute('hidden');
     setText('r-layers', String(result.stats.layers));
     setText('r-extrusion', `${Math.round(result.stats.extrusion).toLocaleString('cs-CZ')} mm`);
     setText('r-bounds', result.bounds ? `${fmt(result.bounds.width)} × ${fmt(result.bounds.height)} mm` : '—');
@@ -189,13 +151,13 @@ import Icon from '../../components/Icon.astro';
       notes.textContent = caveatOf(result.stats);
       notes.hidden = !notes.textContent;
     }
-
-    if (range) {
-      range.max = String(Math.max(0, result.stats.layers - 1));
-      range.value = '0';
-    }
-    show(0);
   }
+
+  // The viewer owns the layer; the readout follows it.
+  viewer?.addEventListener('layerchange', (event) => {
+    const { layer } = (event as CustomEvent<{ layer: { paths: unknown[] } }>).detail;
+    setText('r-paths', String(layer.paths.length));
+  });
 
   function handleFile(file: File) {
     if (file.size > MAX_BYTES) {
@@ -229,22 +191,17 @@ import Icon from '../../components/Icon.astro';
     }
   });
 
-  drop?.addEventListener('dragover', (e) => {
-    e.preventDefault();
+  drop?.addEventListener('dragover', (event) => {
+    event.preventDefault();
     drop.classList.add('is-over');
   });
   drop?.addEventListener('dragleave', () => drop.classList.remove('is-over'));
-  drop?.addEventListener('drop', (e) => {
-    e.preventDefault();
+  drop?.addEventListener('drop', (event) => {
+    event.preventDefault();
     drop.classList.remove('is-over');
-    const file = e.dataTransfer?.files?.[0];
+    const file = event.dataTransfer?.files?.[0];
     if (file) handleFile(file);
   });
-
-  range?.addEventListener('input', () => show(Number(range.value)));
-  $<HTMLButtonElement>('g-prev')?.addEventListener('click', () => show(index - 1));
-  $<HTMLButtonElement>('g-next')?.addEventListener('click', () => show(index + 1));
-  window.addEventListener('resize', draw);
 </script>
 
 <style>
@@ -265,24 +222,53 @@ import Icon from '../../components/Icon.astro';
     gap: 16px;
     align-content: start;
   }
-  .canvas-wrap {
-    position: relative;
+  .stage {
     background: var(--panel);
-    min-height: 460px;
   }
-  #g-canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-    min-height: 460px;
-  }
-  .hint {
-    position: absolute;
-    inset: 0;
+  .field {
     display: grid;
-    place-items: center;
-    margin: 0;
+    gap: 6px;
+  }
+  .field > span {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+  }
+  .field input[type='file'] {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--mono);
     font-size: 12px;
+    padding: 8px 10px;
+    width: 100%;
+  }
+  .readout {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+  }
+  .readout > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid var(--line-soft);
+    padding-bottom: 6px;
+  }
+  .readout dt {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+  }
+  .readout dd {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
   }
   .demo {
     display: grid;
@@ -305,45 +291,9 @@ import Icon from '../../components/Icon.astro';
     opacity: 0.55;
     cursor: progress;
   }
-  .scrub {
-    display: grid;
-    gap: 10px;
-  }
-  .scrub[hidden] {
-    display: none;
-  }
-  .scrub-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 12px;
-  }
-  .scrub-head b {
-    font-weight: 500;
-  }
-  #g-range {
-    width: 100%;
-    accent-color: var(--accent);
-  }
-  .steppers {
-    display: flex;
-    gap: 10px;
-  }
-  .btn-quiet {
-    border-color: var(--line);
-    color: var(--dim);
-  }
-  .btn-quiet:hover {
-    background: var(--line);
-    color: var(--ink);
-  }
   @media (max-width: 900px) {
     .viewer {
       grid-template-columns: 1fr;
-    }
-    .canvas-wrap,
-    #g-canvas {
-      min-height: 360px;
     }
   }
 </style>
