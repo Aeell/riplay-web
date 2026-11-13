@@ -91,19 +91,26 @@ const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.local
   <section class="sheet wrap" id="denik">
     <div class="sheet-head">
       <h2>Deník stavby</h2>
-      <span class="eyebrow">04 / pětiosá mašina + slicer</span>
+      <span class="eyebrow">
+        04 / pětiosá mašina + slicer · <a href="/denik/" class="inline-link">všechny epizody →</a>
+      </span>
     </div>
 
-    {episodes.map((e) => (
-      <article class="ep">
-        <div class="no">{e.data.n}</div>
-        <div>
-          <h3>{e.data.title}</h3>
-          <p>{e.data.summary}</p>
-        </div>
-        <span class="tag">{e.data.status === 'published' && e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme'}</span>
-      </article>
-    ))}
+    {episodes.map((e) => {
+      const isPublished = e.data.status === 'published';
+      return (
+        <article class="ep">
+          <div class="no">{e.data.n}</div>
+          <div>
+            <h3>
+              {isPublished ? <a href={`/denik/${e.id}/`}>{e.data.title}</a> : e.data.title}
+            </h3>
+            <p>{e.data.summary}</p>
+          </div>
+          <span class="tag">{isPublished && e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme'}</span>
+        </article>
+      );
+    })}
   </section>
 
   <section class="sheet wrap" id="zakazka">

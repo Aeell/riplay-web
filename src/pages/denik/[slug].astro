@@ -1,0 +1,89 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+// Only published episodes get a page: a planned episode announced on the homepage does not
+// deserve a URL, because an empty page is a promise dressed as content.
+export async function getStaticPaths() {
+  const episodes = await getCollection('episodes', ({ data }) => data.status === 'published');
+  return episodes.map((episode) => ({ params: { slug: episode.id }, props: { episode } }));
+}
+
+const { episode } = Astro.props;
+const { Content } = await render(episode);
+const d = episode.data;
+const stamp = d.date ? d.date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+---
+
+<Base title={`${d.n} — ${d.title} · Riplay`} description={d.summary}>
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">deník · {d.n}</p>
+        <h1 style="margin-top:14px">{d.title}</h1>
+      </div>
+      {stamp && <span class="eyebrow">{stamp}</span>}
+    </div>
+
+    <p class="lead" style="max-width:64ch">{d.summary}</p>
+
+    {d.machineConfig && (
+      <p class="config mono">
+        <span>stroj při téhle epizodě</span>
+        {d.machineConfig}
+      </p>
+    )}
+
+    <article class="prose">
+      <Content />
+    </article>
+
+    <p class="mono dim" style="margin-top:44px">
+      <a href="/denik/">← všechny epizody</a>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .config {
+    margin-top: 26px;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--dim);
+    border-left: 2px solid var(--line);
+    padding-left: 14px;
+    max-width: 72ch;
+  }
+  .config span {
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    color: var(--dimmer);
+    margin-bottom: 3px;
+  }
+  .prose {
+    margin-top: 36px;
+    max-width: 64ch;
+  }
+  .prose :global(h2) {
+    font-size: 21px;
+    margin-top: 38px;
+  }
+  .prose :global(p),
+  .prose :global(li) {
+    color: #c9c7c2;
+    line-height: 1.7;
+  }
+  .prose :global(strong) {
+    color: var(--ink);
+  }
+  .prose :global(a) {
+    color: var(--accent);
+    border-bottom: 1px solid rgba(255, 92, 26, 0.35);
+  }
+  .prose :global(ol),
+  .prose :global(ul) {
+    padding-left: 20px;
+  }
+</style>

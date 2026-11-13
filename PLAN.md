@@ -251,9 +251,18 @@ Unknown envelope, tolerance and materials stay `null` and render `doplní se`.
 **Blocked:** the traces are still owner statements. D5 (photos) and D20 (telemetry) turn
 them into artefacts; the data file is where that changes, not the page.
 
-### D14 — Episode 0 **[SHIP]**
+### D14 — Episode 0 **[SHIP]** ✅ done 2026-11-13
 "Proč pětioska" — the retrofit story so far: what works, what failed, what it cost.
-**Done:** episode published and linked from the homepage.
+
+Published at `/denik/ep-00/`, with `/denik/` as the index. Written only from what the repo can
+establish: the DSP's opacity as the reason for the swap, the missing LinuxCNC post-processor
+(U instead of E, temperatures as M-codes, no G28 in-program), and the one unverified thing —
+Flexi-HAL analog input for the thermistor and heater. Costs and hours are `doplní se`, because
+an estimate here would be exactly the kind of number the site exists to refuse.
+**Done:** episode published and linked from the homepage — verified: the homepage links EP 00
+and leaves EP 01 unlinked until it exists; `/denik/` lists both and links only the published one.
+**Note:** the summary on the homepage still says "co shořelo" from the earlier draft; the episode
+body says what actually happened. Tighten that phrase when the next episode is written.
 
 ### D15 — Slicer repo **[SHIP]**
 `riplay-slicer` public: README with an honest status line, license decision, short

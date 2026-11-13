@@ -1,0 +1,87 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+// Planned episodes are listed but not linked: no URL exists until one is published.
+const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.localeCompare(b.data.n));
+const published = episodes.filter((e) => e.data.status === 'published');
+---
+
+<Base title="Deník stavby — Riplay" description="Epizody stavby pětiosé mašiny: co fungovalo, co ne, a co to stálo.">
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">deník</p>
+        <h1 style="margin-top:14px">Deník stavby</h1>
+      </div>
+      <span class="eyebrow">{published.length} publikováno</span>
+    </div>
+
+    <p class="lead" style="max-width:62ch">
+      Každá epizoda je datovaná podle konfigurace stroje, která ten den existovala. Nejsou to
+      novinky, je to záznam.
+    </p>
+
+    <div class="eps">
+      {episodes.map((e) => {
+        const isPublished = e.data.status === 'published';
+        const stamp = e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme';
+        const body = (
+          <>
+            <span class="mono dim">{e.data.n}</span>
+            <div>
+              <h2>{e.data.title}</h2>
+              <p>{e.data.summary}</p>
+            </div>
+            <span class="mono dim">{stamp}</span>
+          </>
+        );
+        return isPublished ? (
+          <a class="ep-row" href={`/denik/${e.id}/`}>{body}</a>
+        ) : (
+          <div class="ep-row planned">{body}</div>
+        );
+      })}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .eps {
+    margin-top: 40px;
+    border-top: 1px solid var(--line);
+  }
+  .ep-row {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 20px;
+    align-items: start;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: inherit;
+  }
+  .ep-row.planned {
+    opacity: 0.6;
+  }
+  .ep-row h2 {
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+  a.ep-row:hover h2 {
+    color: var(--accent);
+  }
+  .ep-row p {
+    margin: 0;
+    color: var(--dim);
+    max-width: 62ch;
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+  @media (max-width: 640px) {
+    .ep-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+</style>

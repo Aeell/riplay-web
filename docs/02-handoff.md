@@ -244,6 +244,9 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        Meanwhile: batch work into a single deploy, and use `npm run preview:full` as the
        review loop — it costs nothing.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
+4. [x] D14 published (2026-11-13) — `/denik/ep-00/` ("Proč pětioska") plus `/denik/` index.
+       Only episodes with `status: published` get a URL; planned ones are listed and unlinked,
+       so no page exists that promises content. Episode copy cites only what the repo can prove.
 4. [x] D13 built, half blocked (2026-11-13) — `/stroj` renders from `src/data/machine.ts`.
        Every row carries the artefact that proves it; right now that artefact is the owner's
        statement, so the page says so in its first paragraph. Photos (D5) and machine telemetry
