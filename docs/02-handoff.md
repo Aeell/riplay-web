@@ -155,6 +155,17 @@ Porting a tool means **rewriting it in the current visual language and vendoring
 libraries** — no third-party CDN, no analytics — never copying the old pages across.
 
 **The order is decided (owner, 2026-11-11):** GoogleFont2SVG first, then the converter.
+
+### T3 verdicts (2026-11-13) — one per tool, with the audience named
+
+| Tool | Verdict | Audience | Why |
+|---|---|---|---|
+| Image compressor | **archived** | zákazník with a 12 MB phone photo | The tool did nothing the phone does not already do; what that visitor needs is told in the intake copy (send the photo as it is, the site shrinks nothing and stores nothing). A page would be a utility with no workshop story. |
+| PDF toolkit | **archived, for now** | partner sending a shop drawing | A PDF is a page, not a path. Pulling real vectors out needs a PDF parser and turns a raster "trace" into a guess about tolerances — exactly the kind of number this site refuses to invent. Revisit only when a real customer file forces it. |
+| QR studio | **archived as a page; becomes a feature** | the workshop itself | The useful QR here is the one printed on the delivery note, pointing at the part's passport. That belongs to D23 paperwork, not to `/nastroje`. |
+
+The rule that produced these: a tool ships only if it names an audience **outside** the
+workshop and finishes one thing in under two minutes. All three failed one half of it.
 Later the toolbox is meant to hold tools for **both kinds of visitor** — the customer who
 knows nothing about CNC or 3D printing, and the partner/maker who speaks the language.
 That rule is written into `PLAN.md` as the Tools programme (T1–T3): a tool ships only if
@@ -227,8 +238,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        Verify after the next push:
        `gh api repos/Aeell/riplay-web/commits/<sha>/status`.
 3. [x] Domain decision pushed into `PLAN.md` D3, which now closes as done (2026-11-11).
-4. [ ] Next content session is **D2** — typed `parts`/`episodes` collections so a new part
-       page needs no code. That is what turns this from a page into a workshop log.
+4. [x] D2 done (2026-11-13) — `src/content.config.ts` defines typed `parts` and `episodes`
+       collections with every unknown fact nullable by type; `/dil/[slug]` renders a passport
+       from data, `/dil` indexes them, and the homepage journal reads the collection. A new
+       `.md` in `src/content/parts/` is a page and an index row with no code change.
 5. [ ] Real facts still needed from the owner: machine envelope and real tolerance, actual
        part photos, price bands, `IČO`. **Machine identity is on record (2026-11-12):
        Wattsan 0404-mini, 2.2 kW spindle, stock RichAuto A11E DSP removed, LinuxCNC on

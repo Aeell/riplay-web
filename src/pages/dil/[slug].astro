@@ -1,0 +1,133 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Replay from '../../components/Replay.astro';
+
+// Nothing on this page is typed by hand: dropping a markdown file into src/content/parts
+// produces a passport. Unknown values are null in the schema and render as `doplní se`.
+
+export async function getStaticPaths() {
+  const parts = await getCollection('parts');
+  return parts.map((part) => ({ params: { slug: part.id }, props: { part } }));
+}
+
+const { part } = Astro.props;
+const { Content } = await render(part);
+const d = part.data;
+
+const stamp = d.started.toLocaleDateString('cs-CZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const isSample = d.status === 'sample';
+
+const facts = [
+  { k: 'materiál', v: d.material },
+  { k: 'stroj', v: d.machine },
+  { k: 'tolerance', v: d.tolerance },
+  { k: 'čas na stroji', v: d.minutes === null ? null : `${d.minutes} min` },
+  { k: 'cena', v: d.price },
+];
+---
+
+<Base title={`${d.title} — Riplay`} description={d.summary}>
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">díl · pas</p>
+        <h1 style="margin-top:14px">{d.title}</h1>
+      </div>
+      <span class="eyebrow">{isSample ? 'vzor · není zakázka' : `stav k ${stamp}`}</span>
+    </div>
+
+    <p class="lead" style="max-width:62ch">{d.summary}</p>
+
+    <div style="margin-top:34px">
+      <Replay
+        part={d.title}
+        caption={d.summary}
+        material={d.material}
+        tolerance={d.tolerance}
+        stages={d.stages}
+        badge={isSample ? 'vzorový díl · čísla ilustrační' : null}
+      />
+    </div>
+
+    <div class="facts passport">
+      {facts.map((f) => (
+        <div>
+          <span>{f.k}</span>
+          {f.v ? <b>{f.v}</b> : <b class="gap">doplní se</b>}
+        </div>
+      ))}
+    </div>
+
+    {d.failures.length > 0 && (
+      <section class="failures">
+        <h2>Co se nepovedlo</h2>
+        <ul>
+          {d.failures.map((f) => <li>{f}</li>)}
+        </ul>
+      </section>
+    )}
+
+    <article class="prose">
+      <Content />
+    </article>
+
+    <p class="mono dim" style="margin-top:40px">
+      {isSample
+        ? 'Tohle je vzorový díl. Skutečný pas má měřené časy, cenu a aspoň jedno selhání.'
+        : `Pas k dílu, stav k ${stamp}.`}
+    </p>
+  </section>
+</Base>
+
+<style>
+  .passport {
+    margin-top: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 18px 28px;
+  }
+  .passport > div {
+    border-top: 1px solid var(--line, #23262a);
+    padding-top: 10px;
+  }
+  .passport span {
+    display: block;
+    font-family: var(--mono, ui-monospace, monospace);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8b8f8c;
+  }
+  .passport b {
+    display: block;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+  .failures {
+    margin-top: 40px;
+    border-left: 2px solid #ff5c1a;
+    padding-left: 18px;
+  }
+  .failures h2 {
+    font-size: 18px;
+  }
+  .failures ul {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: #c9c7c2;
+  }
+  .prose {
+    margin-top: 44px;
+    max-width: 62ch;
+  }
+  .prose :global(h2) {
+    font-size: 20px;
+    margin-top: 32px;
+  }
+  .prose :global(p),
+  .prose :global(li) {
+    color: #c9c7c2;
+    line-height: 1.65;
+  }
+</style>

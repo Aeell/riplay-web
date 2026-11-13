@@ -17,12 +17,21 @@ hairline grid, one accent, mono data), scaffold Astro, and prototype the Replay
 scrubber with a **sample** part, clearly labelled as a sample.
 **Done:** `npm run dev` shows a page that explains the project in five seconds.
 
-### D2 — The content model
+### D2 — The content model ✅ done 2026-11-13
 Typed collections: `parts` and `episodes`. Frontmatter schema covers what a passport
 must contain (brief, material, machine, minutes, price band, stage assets, failures).
 One part page renders entirely from data.
-**Done:** dropping a new `.mdx` file into `parts/` produces a working page and an
-index entry, with no code change.
+
+Shipped as `src/content.config.ts` (Astro content layer, glob loader, zod schema): every
+unknown fact is **nullable by type**, so `doplní se` is enforced by the schema rather than
+remembered by the author. `/dil/[slug]` renders the passport — facts, Replay driven by the
+entry's own stages, failures, markdown body — and `/dil` indexes the collection. The
+homepage journal now reads `episodes` instead of a hardcoded array, so announcing an
+episode is a file too. `Replay` takes props with the sample as default, which is what lets
+the same drawing serve a real part without a second component.
+**Done:** dropping a new `.md` file into `src/content/parts/` produces a working page and an
+index entry, with no code change — verified by building `/dil/vzorova-vlozka/` and `/dil/`
+from the sample entry alone.
 
 ### D3 — Hosting and HTTPS **[SHIP]** ✅ done 2026-11-11
 
@@ -200,9 +209,15 @@ instead of guessed at. `scripts/verify-paths2d.mjs` does the same for 2D: viewBo
 group transforms, curve tolerance against the real curve, arcs, DXF bulges, and open paths
 staying open through a DXF round trip.
 
-### T3 — The other three, judged by the rule
+### T3 — The other three, judged by the rule ✅ decided 2026-11-13
 Image compressor, PDF toolkit, QR studio: each either earns a page under the audience rule
 or stays archived. Nothing ships because it already exists.
+
+All three stay archived, each for a stated reason, and two of the three have their real
+need served elsewhere instead of by a page: the image compressor's audience is the
+customer with 12 MB phone photos, and the answer is intake guidance rather than a tool; the
+QR studio's audience is the workshop itself, so a code belongs **on the printed delivery
+note**, not as a public page. PDF remains the honest gap in `/nastroje/prevod`.
 **Done:** one decision per tool recorded in `docs/02-handoff.md` §4, each with the
 audience named.
 

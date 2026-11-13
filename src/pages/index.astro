@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Replay from '../components/Replay.astro';
 import Iso from '../components/Iso.astro';
@@ -8,24 +9,8 @@ import { shop } from '../data/shop';
 // presentation only — the data layer stays free of drawing decisions
 const serviceIcon = { '01': 'cad', '02': 'cnc', '03': 'print' } as const;
 
-const episodes = [
-  {
-    n: 'EP 00',
-    title: 'Proč pětioska',
-    text:
-      'Malá frézka (Wattsan 0404-mini, 2.2 kW vřeteno), teď pod LinuxCNC přes Pi 5 a FlexiHAL. Co fungovalo, co shořelo a proč z toho má být pětiosá mašina s tiskovou hlavou.',
-    tag: 'připravujeme',
-    href: null,
-  },
-  {
-    n: 'EP 01',
-    title: 'Slicer, který neexistuje',
-    text:
-      'Open-source pětiosý slicer pro hobby použití nikdo neudělal pořádně. Začínáme tím, co umí každý — a končíme tam, kde to přestává být pravda.',
-    tag: 'připravujeme',
-    href: null,
-  },
-];
+// The journal is data now: an episode is a file in src/content/episodes.
+const episodes = (await getCollection('episodes')).sort((a, b) => a.data.n.localeCompare(b.data.n));
 ---
 
 <Base>
@@ -110,12 +95,12 @@ const episodes = [
 
     {episodes.map((e) => (
       <article class="ep">
-        <div class="no">{e.n}</div>
+        <div class="no">{e.data.n}</div>
         <div>
-          <h3>{e.title}</h3>
-          <p>{e.text}</p>
+          <h3>{e.data.title}</h3>
+          <p>{e.data.summary}</p>
         </div>
-        <span class="tag">{e.tag}</span>
+        <span class="tag">{e.data.status === 'published' && e.data.date ? e.data.date.toLocaleDateString('cs-CZ') : 'připravujeme'}</span>
       </article>
     ))}
   </section>

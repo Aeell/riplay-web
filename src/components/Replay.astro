@@ -1,20 +1,39 @@
 ---
-import { replay } from '../data/replay';
+import { replay as sample } from '../data/replay';
 
-const stages = replay.stages;
+// The component draws one assembly and is driven by whatever data it is given, so a real
+// part page and the homepage sample share the same visual. Defaults are the sample.
+interface Props {
+  part?: string;
+  caption?: string;
+  material?: string | null;
+  tolerance?: string | null;
+  stages?: { k: string; n: string; t: string | null }[];
+  /** null hides the badge — a real part does not need to apologise for its numbers */
+  badge?: string | null;
+}
+
+const {
+  part = sample.part,
+  caption = sample.caption,
+  material = sample.material,
+  tolerance = sample.tolerance,
+  stages = sample.stages,
+  badge = 'vzorový díl · čísla ilustrační',
+} = Astro.props;
 ---
 
 <div class="replay" data-stage="0">
   <div class="replay-frame">
-    <span class="rp-badge">vzorový díl · čísla ilustrační</span>
+    {badge && <span class="rp-badge">{badge}</span>}
     <div class="rp-hud">
-      <span>materiál <b>{replay.material}</b></span>
-      <span>tolerance <b>{replay.tolerance}</b></span>
+      <span>materiál <b>{material ?? 'doplní se'}</b></span>
+      <span>tolerance <b>{tolerance ?? 'doplní se'}</b></span>
     </div>
 
     <svg viewBox="0 0 720 470" role="img" aria-labelledby="rp-title rp-desc">
-      <title id="rp-title">{replay.part} — průběh výroby</title>
-      <desc id="rp-desc">{replay.caption}</desc>
+      <title id="rp-title">{part} — průběh výroby</title>
+      <desc id="rp-desc">{caption}</desc>
 
       <defs>
         <rect id="plate" x="210" y="150" width="300" height="170" rx="20" />
@@ -136,8 +155,8 @@ const stages = replay.stages;
       aria-label="Fáze výroby dílu" />
     <div class="rp-ticks">
       {stages.map((s, i) => (
-        <button type="button" data-k={s.k} data-n={s.n} data-t={s.t} aria-current={i === 0 ? 'true' : 'false'}>
-          {s.k}<small>{s.t}</small>
+        <button type="button" data-k={s.k} data-n={s.n} data-t={s.t ?? ''} aria-current={i === 0 ? 'true' : 'false'}>
+          {s.k}<small>{s.t ?? '—'}</small>
         </button>
       ))}
     </div>

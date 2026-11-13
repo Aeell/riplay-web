@@ -1,0 +1,81 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+// The index exists so a new file in src/content/parts is reachable without touching code.
+const parts = (await getCollection('parts')).sort(
+  (a, b) => b.data.started.getTime() - a.data.started.getTime(),
+);
+
+const state = {
+  sample: 'vzor',
+  'in-progress': 'rozestavěno',
+  done: 'hotovo',
+} as const;
+---
+
+<Base title="Díly — Riplay" description="Pasy dílů: zadání, CAD, dráhy, stroj, čas a co se nepovedlo.">
+  <section class="sheet wrap">
+    <div class="sheet-head">
+      <div>
+        <p class="eyebrow">díly</p>
+        <h1 style="margin-top:14px">Každý díl má svůj pas</h1>
+      </div>
+      <span class="eyebrow">{parts.length} záznamů</span>
+    </div>
+
+    <p class="lead" style="max-width:62ch">
+      Zadání, CAD, dráhy, stroj, čas, cena a co se nepovedlo. Když něco chybí, je to na
+      stránce vidět — místo aby to vypadalo hotové.
+    </p>
+
+    <div class="part-list">
+      {parts.map((p) => (
+        <a class="part-row" href={`/dil/${p.id}/`}>
+          <span class="tag">{state[p.data.status]}</span>
+          <div>
+            <h2>{p.data.title}</h2>
+            <p>{p.data.summary}</p>
+          </div>
+          <span class="mono dim">{p.data.started.toLocaleDateString('cs-CZ')}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .part-list {
+    margin-top: 40px;
+    border-top: 1px solid var(--line, #23262a);
+  }
+  .part-row {
+    display: grid;
+    grid-template-columns: 110px 1fr auto;
+    gap: 20px;
+    align-items: start;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line, #23262a);
+    text-decoration: none;
+    color: inherit;
+  }
+  .part-row:hover h2 {
+    color: #ff5c1a;
+  }
+  .part-row h2 {
+    font-size: 19px;
+    margin: 0 0 6px;
+    transition: color 0.15s;
+  }
+  .part-row p {
+    margin: 0;
+    color: #9b9e9b;
+    max-width: 60ch;
+  }
+  @media (max-width: 640px) {
+    .part-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+</style>
