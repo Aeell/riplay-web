@@ -44,7 +44,7 @@ import Icon from '../../components/Icon.astro';
             </select>
           </label>
           <label class="field">
-            <span>Měřítko (×)</span>
+            <span>Měřítko (×) — 3D i 2D</span>
             <input id="f-scale" type="number" value="1" min="0.001" max="1000" step="0.001" />
           </label>
         </div>
@@ -213,7 +213,7 @@ import Icon from '../../components/Icon.astro';
   import {
     meshFrom, writeMesh, stats, scaleMesh, outputName, MAX_FILE_BYTES, tooLarge,
   } from '../../lib/mesh.mjs';
-  import { pathsFrom, writePaths, pathStats } from '../../lib/paths2d.mjs';
+  import { pathsFrom, writePaths, pathStats, scalePaths } from '../../lib/paths2d.mjs';
 
   const $ = (id) => document.getElementById(id);
   const state = { name: null, kind: null, tris: null, contours: null };
@@ -293,9 +293,16 @@ import Icon from '../../components/Icon.astro';
     }
   }
 
+  // The number the part will actually measure on the machine, not just the file name.
   function updateOutput() {
     if (!state.name) return;
-    $('f-out').textContent = `→ ${outputName(state.name, $('f-target').value)}`;
+    const factor = number('f-scale', 1);
+    const target = $('f-target').value;
+    const dims = state.kind === 'paths'
+      ? pathStats(scalePaths(state.contours, factor)).size
+      : stats(scaleMesh(state.tris, factor)).size;
+    const measured = dims.map((value) => value.toFixed(2)).join(' × ');
+    $('f-out').textContent = `→ ${outputName(state.name, target)} · ${measured} mm`;
   }
 
   async function load(file) {
@@ -352,13 +359,14 @@ import Icon from '../../components/Icon.astro';
   });
 
   $('f-target').addEventListener('change', updateOutput);
+  $('f-scale').addEventListener('input', updateOutput);
 
   $('b-download').addEventListener('click', () => {
     try {
       const target = $('f-target').value;
       const factor = number('f-scale', 1);
       const { bytes, mime } = state.kind === 'paths'
-        ? writePaths(state.contours, target)
+        ? writePaths(scalePaths(state.contours, factor), target)
         : writeMesh(scaleMesh(state.tris, factor), target);
 
       const url = URL.createObjectURL(new Blob([bytes], { type: mime }));

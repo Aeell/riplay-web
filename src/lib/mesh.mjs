@@ -11,6 +11,10 @@ const cube = (bytes) => new Uint8Array(bytes);
 export const MAX_FILE_BYTES = 40 * 1024 * 1024;
 export const MAX_TRIANGLES = 1_500_000;
 
+export const triangleLimit = (count) =>
+  `Model má ${Number(count).toLocaleString('cs-CZ')} trojúhelníků, limit je ${MAX_TRIANGLES.toLocaleString('cs-CZ')}. `
+  + 'Tohle je nástroj na jednu součástku, ne na celou sestavu.';
+
 export function tooLarge(bytes) {
   return `Soubor má ${(bytes / 1048576).toFixed(1)} MB. Tenhle nástroj zvládne ${MAX_FILE_BYTES / 1048576} MB — `
     + 'větší model otevři v sliceru na počítači, tady by zamrazil prohlížeč.';
@@ -27,6 +31,8 @@ function readStlBinary(bytes) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const count = view.getUint32(80, true);
   if (!count) throw new Error('STL neobsahuje žádné trojúhelníky');
+  // Refuse before allocating 9 floats per triangle, not after.
+  if (count > MAX_TRIANGLES) throw new Error(triangleLimit(count));
   const expected = 84 + count * 50;
   if (expected !== bytes.byteLength) throw new Error(`STL hlásí ${count} trojúhelníků, ale velikost nesedí`);
 
@@ -123,6 +129,7 @@ function readPly(bytes) {
   const face = elements.find((element) => element.name === 'face');
   if (!vertex) throw new Error('PLY nemá element vertex');
   if (!face) throw new Error('PLY nemá element face');
+  if (face.count > MAX_TRIANGLES) throw new Error(triangleLimit(face.count));
   if (vertex.props.some((property) => property.list)) {
     throw new Error('PLY má u vrcholů seznam (list) — to neumím');
   }
@@ -302,6 +309,18 @@ function readGlb(bytes) {
     offset += 8 + length;
   }
   if (!gltf) throw new Error('GLB neobsahuje JSON chunk');
+
+  // Count triangles from the accessors before touching the buffer.
+  let declared = 0;
+  for (const mesh of gltf.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      const accessor = primitive.indices !== undefined
+        ? gltf.accessors?.[primitive.indices]
+        : gltf.accessors?.[primitive.attributes?.POSITION];
+      declared += Math.floor((accessor?.count ?? 0) / 3);
+    }
+  }
+  if (declared > MAX_TRIANGLES) throw new Error(triangleLimit(declared));
 
   // A .glb may still point its buffer at a data URI; a .gltf with an external .bin cannot
   // be read from one file, and that is reported rather than silently half-parsed.
@@ -496,12 +515,12 @@ export function meshFrom(name, bytes) {
     const ascii = head.startsWith('solid') && head.includes('facet');
     return {
       format: ascii ? 'stl-ascii' : 'stl-binary',
-      tris: ascii ? readStlAscii(new TextDecoder().decode(bytes)) : readStlBinary(bytes),
+      tris: checkCount(ascii ? readStlAscii(new TextDecoder().decode(bytes)) : readStlBinary(bytes)),
     };
   }
   if (format === 'obj') return { format: 'obj', tris: checkCount(readObj(new TextDecoder().decode(bytes))) };
-  if (format === 'ply') return { format: 'ply', tris: readPly(bytes) };
-  return { format: 'glb', tris: readGlb(bytes) };
+  if (format === 'ply') return { format: 'ply', tris: checkCount(readPly(bytes)) };
+  return { format: 'glb', tris: checkCount(readGlb(bytes)) };
 }
 
 export function scaleMesh(tris, factor) {
@@ -557,8 +576,6 @@ export function outputName(name, format) {
 
 // Parse-time triangle guard: well under the freeze point, well above a real workshop part.
 function checkCount(tris) {
-  if (tris.length / 9 > MAX_TRIANGLES) {
-    throw new Error(`Model má ${(tris.length / 9).toLocaleString('cs-CZ')} trojúhelníků, limit je ${MAX_TRIANGLES.toLocaleString('cs-CZ')}.`);
-  }
+  if (tris.length / 9 > MAX_TRIANGLES) throw new Error(triangleLimit(tris.length / 9));
   return tris;
 }

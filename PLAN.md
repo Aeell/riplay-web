@@ -182,8 +182,12 @@ transforms, `width`/`viewBox` converted to millimetres, `rect`/`circle`/`ellipse
 CIRCLE, honours `$INSUNITS`, and keeps open paths open on export. Still not done: **PDF** —
 it is a page, not a path, and a raster trace would be a different claim.
 
-Big files are refused at the door: over 40 MB the tool says so instead of freezing the tab,
-before the bytes are even read. PLY is read by property **name and type** from the header
+Scale applies to 2D as well as 3D, and the page prints the resulting millimetres under the
+button, so the number on screen is the number CAM will cut. The exported SVG canvas equals
+the geometry (no padding), because a drawing that arrives 2 mm larger than the part is a
+wrong part. Big files are refused at the door: over 40 MB the tool says so instead of
+freezing the tab, before the bytes are even read, and every reader refuses more than
+1.5 M triangles from the file's own header. PLY is read by property **name and type** from the header
 (scanners put normals or colour first, some write doubles), and a type the reader does not
 know is refused with its name rather than silently misread.
 

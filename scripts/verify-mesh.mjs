@@ -171,6 +171,44 @@ try {
 } catch (error) { plyMessage = error.message; }
 check('PLY refuses a missing coordinate', /z/.test(plyMessage), plyMessage);
 
+// The triangle ceiling must be enforced by every reader, from the header where possible.
+let ceiling = '';
+try {
+  const stl = new Uint8Array(84);
+  new DataView(stl.buffer).setUint32(80, 2_000_000, true);
+  meshFrom('huge.stl', stl);
+} catch (error) { ceiling = error.message; }
+check('STL triangle ceiling is refused from the header', /limit/.test(ceiling), ceiling.slice(0, 60));
+
+ceiling = '';
+try {
+  meshFrom('huge.ply', new TextEncoder().encode('ply\nformat ascii 1.0\nelement vertex 3\nproperty float x\nproperty float y\nproperty float z\nelement face 2000000\nproperty list uchar int vertex_indices\nend_header\n'));
+} catch (error) { ceiling = error.message; }
+check('PLY triangle ceiling is refused from the header', /limit/.test(ceiling), ceiling.slice(0, 60));
+
+ceiling = '';
+try {
+  const json = {
+    asset: { version: '2.0' }, scene: 0, scenes: [{ nodes: [0] }], nodes: [{ mesh: 0 }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0 }, mode: 4 }] }],
+    accessors: [{ bufferView: 0, componentType: 5126, count: 6_000_003, type: 'VEC3' }],
+    bufferViews: [{ buffer: 0, byteLength: 12 }], buffers: [{ byteLength: 12 }],
+  };
+  const jb = new TextEncoder().encode(JSON.stringify(json));
+  const jp = new Uint8Array(jb.length + ((4 - (jb.length % 4)) % 4)).fill(0x20);
+  jp.set(jb);
+  const total = 12 + 8 + jp.length + 8 + 12;
+  const out = new Uint8Array(total);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, 0x46546c67, true); view.setUint32(4, 2, true); view.setUint32(8, total, true);
+  view.setUint32(12, jp.length, true); view.setUint32(16, 0x4e4f534a, true);
+  out.set(jp, 20);
+  const binStart = 20 + jp.length;
+  view.setUint32(binStart, 12, true); view.setUint32(binStart + 4, 0x004e4942, true);
+  meshFrom('huge.glb', out);
+} catch (error) { ceiling = error.message; }
+check('GLB triangle ceiling is refused from the accessors', /limit/.test(ceiling), ceiling.slice(0, 60));
+
 let bigMessage = '';
 try { meshFrom('huge.stl', new Uint8Array(41 * 1024 * 1024)); } catch (error) { bigMessage = error.message; }
 check('oversized model is refused before parsing', /MB/.test(bigMessage), bigMessage.slice(0, 55));

@@ -530,9 +530,11 @@ export function contoursToDxf(contours, options = {}) {
   return out.join('\n') + '\n';
 }
 
-export function contoursToSvg(contours) {
+export function contoursToSvg(contours, options = {}) {
   const b = pathBounds(contours);
-  const pad = 1;
+  // No padding by default: the canvas is the geometry, so the millimetres in the file are
+  // the millimetres of the part and a CAM import cannot quietly inherit a 2 mm border.
+  const pad = options.padding ?? 0;
   const width = b.width + pad * 2;
   const height = b.height + pad * 2;
   const d = contours
@@ -577,6 +579,14 @@ export function pathBounds(contours) {
     height: maxY - minY,
     points,
   };
+}
+
+export function scalePaths(contours, factor) {
+  if (!Number.isFinite(factor) || factor === 1) return contours;
+  return contours.map((contour) => ({
+    closed: contour.closed,
+    points: contour.points.map((point) => ({ x: point.x * factor, y: point.y * factor })),
+  }));
 }
 
 export function pathStats(contours) {

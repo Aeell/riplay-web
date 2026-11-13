@@ -3,6 +3,7 @@
 
 import {
   pathsFrom, writePaths, flattenPathData, pathBounds, pathStats, contoursToDxf, contoursToSvg,
+  scalePaths,
 } from '../src/lib/paths2d.mjs';
 
 let failures = 0;
@@ -92,6 +93,31 @@ check('SVG round-trip keeps geometry', close(rts.width, 10) && close(rts.height,
 // Open contours must not be closed on export.
 const openRoundTrip = pathsFrom('open.dxf', bytes(contoursToDxf([{ points: [{ x: 0, y: 0 }, { x: 10, y: 0 }], closed: false }]))).contours;
 check('open contour stays open through DXF', !openRoundTrip[0].closed);
+
+// Scale has to reach 2D, or a drawing imported into CAM is silently the wrong size.
+const scaledPaths = scalePaths(square.contours, 2);
+const scaledPathBounds = pathBounds(scaledPaths);
+check('2D scale ×2 doubles the drawing', close(scaledPathBounds.width, 20) && close(scaledPathBounds.height, 20), `${scaledPathBounds.width} × ${scaledPathBounds.height}`);
+
+// The exported SVG canvas must equal the geometry: no invisible 1 mm border.
+const canvas = /width="([\d.]+)mm"/.exec(contoursToSvg(square.contours));
+check('SVG canvas equals the geometry, no padding', canvas && close(Number(canvas[1]), 10), `${canvas?.[1]} mm`);
+
+// The millimetre claim, end to end: 210 mm wide file holding a 100-unit drawing, exported
+// to DXF, must land on 21 mm — the number a CAM toolpath will actually cut.
+const truth = pathsFrom('truth.svg', svg('<rect x="0" y="0" width="10" height="10"/>', 'width="210mm" height="210mm" viewBox="0 0 100 100"'));
+const truthDxf = contoursToDxf(truth.contours);
+// Y is flipped on purpose (SVG is y-down, CAD is y-up), so a shape at the top of the page
+// lands at high y in the DXF. What has to be 21 mm is the span, not the absolute max.
+const grab = (name) => new RegExp(`\\$${name}\\n10\\n([-\\d.]+)\\n20\\n([-\\d.]+)`).exec(truthDxf);
+const truthMax = grab('EXTMAX');
+const truthMin = grab('EXTMIN');
+const spanX = Number(truthMax?.[1]) - Number(truthMin?.[1]);
+const spanY = Number(truthMax?.[2]) - Number(truthMin?.[2]);
+check('210 mm / 100 units spans exactly 21 mm in DXF', close(spanX, 21) && close(spanY, 21), `span ${spanX} × ${spanY} (max ${truthMax?.[1]}, ${truthMax?.[2]})`);
+
+const truthReread = pathBounds(pathsFrom('truth.dxf', bytes(truthDxf)).contours);
+check('and survives the round trip at 21 mm', close(truthReread.width, 21) && close(truthReread.height, 21), `${truthReread.width.toFixed(3)} × ${truthReread.height.toFixed(3)}`);
 
 check('stats count closed contours', pathStats(square.contours).closed === 1 && pathStats(square.contours).contours === 1);
 
