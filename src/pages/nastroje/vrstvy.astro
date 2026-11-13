@@ -35,6 +35,16 @@ import Icon from '../../components/Icon.astro';
           <input id="g-file" type="file" accept=".gcode,.gco,.nc,.tap,.txt" />
         </label>
 
+        <div class="demo">
+          <button class="btn btn-quiet" type="button" id="g-demo">Načíst ukázku</button>
+          <p class="mono dim">
+            Ukázka z našeho sliceru: destička 30 × 20 × 4 mm s otvorem Ø6 a lemem,
+            13 vrstev po 0,3 mm. Dráhy jsou opravdové, ale <b>netisklo se</b> — a soubor je
+            v dialektu Klipperu, na LinuxCNC ho teprve přepíše postprocesor. Můžeš si ho
+            <a href="/vrstvy/ukazka.gcode" download>stáhnout</a> a otevřít ve svém.
+          </p>
+        </div>
+
         <p class="mono" id="g-error" role="status" aria-live="polite"></p>
 
         <div class="scrub" hidden id="g-scrub">
@@ -62,7 +72,7 @@ import Icon from '../../components/Icon.astro';
 
       <div class="canvas-wrap">
         <canvas id="g-canvas" aria-label="Náhled vrstvy G-code"></canvas>
-        <p class="mono dim hint" id="g-hint">přetáhni .gcode sem</p>
+        <p class="mono dim hint" id="g-hint">přetáhni .gcode sem — nebo si načti ukázku</p>
       </div>
     </div>
   </section>
@@ -205,6 +215,23 @@ import Icon from '../../components/Icon.astro';
     if (file) handleFile(file);
   });
 
+  // A tool that opens empty is a tool nobody tries. The sample is a real slice from the
+  // workshop's own engine, shipped as a file (not baked into the page) and labelled as a demo.
+  $<HTMLButtonElement>('g-demo')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    if (error) error.textContent = '';
+    try {
+      const response = await fetch('/vrstvy/ukazka.gcode');
+      if (!response.ok) throw new Error(String(response.status));
+      load('ukazka.gcode', await response.text());
+    } catch {
+      if (error) error.textContent = 'ukázku se nepodařilo načíst — přetáhni si vlastní soubor';
+    } finally {
+      button.disabled = false;
+    }
+  });
+
   drop?.addEventListener('dragover', (e) => {
     e.preventDefault();
     drop.classList.add('is-over');
@@ -259,6 +286,27 @@ import Icon from '../../components/Icon.astro';
     place-items: center;
     margin: 0;
     font-size: 12px;
+  }
+  .demo {
+    display: grid;
+    gap: 10px;
+    justify-items: start;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .demo p {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.55;
+    max-width: 42ch;
+  }
+  .demo p b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .demo .btn[disabled] {
+    opacity: 0.55;
+    cursor: progress;
   }
   .scrub {
     display: grid;

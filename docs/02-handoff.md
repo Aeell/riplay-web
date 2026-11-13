@@ -301,7 +301,10 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
 9. [x] D17 done — `/nastroje/vrstvy` reads a `.gcode` in the browser and scrubs it by layer
        (`src/lib/gcode.mjs`, `scripts/verify-gcode.mjs`, 20 checks). Uses a 2D canvas, not
        Three.js: see the deviation recorded in `PLAN.md` D17. Reads `;Layer` / `;LAYER:` /
-       `;LAYER_CHANGE` markers; without markers it falls back to rising Z and says so. The
+       `;LAYER_CHANGE` markers; without markers it falls back to rising Z and says so.
+       It ships a demo (`public/vrstvy/ukazka.gcode`, 283 KB) sliced by `riplay-slicer` from a
+       30 × 20 × 4 mm plate with a Ø6 hole, loaded by a button so the tool is usable on arrival;
+       the page says it is real but never printed, and that it is Klipper dialect. The
        first real file broke it three times (z-hop → 51 365 "layers", leading `Z30` poisoning
        layer 1, case-sensitive marker regex) — all three are now regression tests.
 10. [~] D18 half done — `src/lib/layer-draw.mjs` is one renderer shared by `/nastroje/vrstvy` and

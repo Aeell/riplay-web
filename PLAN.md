@@ -337,6 +337,14 @@ After the fixes the reader reports **445 layers, z 0.30 → 133.50 mm, 31 762 mm
 for `/tmp/pipe.gcode`, matching the engine's own 445 `;Layer` markers, and the browser draws
 each layer (≈12 000 painted pixels on layer 1, ≈7 000 at 223).
 
+**A demo that is not a lie:** the page used to open empty, which is a tool nobody tries. It now
+ships `public/vrstvy/ukazka.gcode` (283 KB, 62 KB gzipped, loaded only on click): a 30 × 20 × 4 mm
+plate with a Ø6 hole and a brim, 13 layers at 0.3 mm, sliced by our own engine —
+`.venv/bin/python cli.py desticka.stl ukazka.gcode 0.3` in `~/Projects/riplay-slicer`, the STL made
+with `trimesh.creation.box([30,20,4]).difference(cylinder(radius=3, height=20))`. The page says what
+it is: real toolpaths, never printed, and written in Klipper's dialect — on LinuxCNC a post would
+have to rewrite it first. A download link ships the same file.
+
 **Verification:** `scripts/verify-gcode.mjs` — 20 checks (`npm run verify:gcode`), including
 the three failures above as regression tests. Browser check on `127.0.0.1:4331`: a 21 MB,
 531 893-line file loads in ~2 s, scrubs 1 → 223 → 224, draws, and reports 108.36 × 68.78 mm.
