@@ -1,0 +1,12 @@
+# Cloudflare Pages — the whole server-side story of this site.
+#
+# Nothing here deploys anything: Pages builds from git, or you run `npx wrangler pages
+# deploy` yourself. DNS is not mentioned on purpose — moving the apex to Cloudflare is a
+# separate, reversible step, written up in docs/03-pages-migration.md.
+name = "riplay"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-11-13"
+
+# No bindings, no KV, no D1, no nodejs_compat. The font proxy only uses fetch, Response and
+# AbortSignal, so the site stays a pile of files plus one stateless Function. The first
+# binding added here would be the first piece of server state this project owns.

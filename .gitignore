@@ -6,3 +6,4 @@ riplay-site.zip
 .env.*
 .DS_Store
 .shots/
+.wrangler/

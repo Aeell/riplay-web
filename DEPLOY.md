@@ -1,5 +1,9 @@
 # Deploying riplay.cz without paying
 
+> **The move to Cloudflare Pages is drafted, not done:** `docs/03-pages-migration.md` is the
+> reviewable plan (config, local test, DNS gates, rollback). Nothing is deployed and no DNS
+> record has changed. This file stays as the record of the Netlify setup that is live today.
+
 The site is currently on Netlify (site `f3abf7bc-b006-4cc4-a72a-8e3832df1c2d`), git-linked to
 `Aeell/riplay-web`, serving `dist/`. The build is reproducible anywhere: `npm install`,
 `npm run build`, publish `dist/`.
@@ -53,7 +57,19 @@ proxy is already written for it — `functions/api/font.js` is the Pages Functio
    Because the zone is already on Cloudflare, the apex works without CNAME tricks, and the
    certificate is issued automatically.
 5. `public/_routes.json` limits the Function to `/api/*`, so ordinary page views never touch
-   it.
+   it. `wrangler.toml` and `public/_headers` carry the project name, output directory,
+   compatibility date and headers, so the dashboard only needs the repo and the build command.
+
+**Test it locally before any of that** — `wrangler` is a devDependency here, so no global install:
+
+```bash
+npm run build
+npm run preview:pages     # workerd serving dist/ with the real routing, http://127.0.0.1:8788
+npm run verify:pages      # 17 checks in a second terminal, or pointed at a pages.dev URL
+```
+
+`src/pages/404.astro` is not decorative: without a top-level `404.html`, Pages answers every
+unknown URL with `200` and the homepage (documented SPA fallback). The local test covers it.
 
 Until the nameservers change, the existing site keeps serving from Netlify — the move is
 reversible at any point by pointing DNS back.

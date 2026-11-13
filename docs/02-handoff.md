@@ -133,6 +133,13 @@ cancelling); optionally drop the duplicate SPF `TXT`.
   second copy of the router that drifts silently; `@astrojs/sitemap` walks what was built, and the
   `serialize` makes its URLs end the way the canonicals do.
 
+- **The Pages move is drafted and frozen at the approval gate (2026-11-13).** `wrangler.toml`,
+  `public/_headers`, `scripts/verify-pages.mjs` and `src/pages/404.astro` are in the repo and pass
+  on workerd (`npm run preview:pages` + `npm run verify:pages`, 17 checks); `docs/03-pages-migration.md`
+  is the runbook. No account, no DNS change, no deploy. The blocker is a decision, not work:
+  Pages cannot serve the apex without moving the zone to Cloudflare's nameservers, which is D3's
+  reverse and puts the mail records in the blast radius.
+
 ## 4. The old site, and what is salvaged from it
 
 `Aeell/riplay` is the previous site: RIPlay as an **automation agency** (Feb–May 2026),
@@ -340,6 +347,9 @@ npm run build && (cd dist && zip -qr ../riplay-site.zip .)
        phone/hours/price/rating), sitemap via `@astrojs/sitemap` (slash-matched to the canonicals),
        `public/robots.txt`, `og:url`. `npm run verify:seo` checks the **built** HTML (69 checks).
        Rich Results + Search Console still need a live deploy — blocked by the Netlify credits.
+12. [ ] Cloudflare Pages move — drafted, awaiting the owner's Gate 0. Read
+       `docs/03-pages-migration.md`, then run `npm run build && npm run preview:pages` and
+       `npm run verify:pages`. Do not create the zone or touch nameservers before that.
 
 ---
 

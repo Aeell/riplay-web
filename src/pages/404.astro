@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+
+// This page is also a hosting requirement, not just a courtesy. Cloudflare Pages reads a
+// missing top-level 404.html as "this build is a single-page application" and answers every
+// unknown URL with 200 and the homepage — a soft 404 for every typo, right after the canonicals
+// went in. A real 404.html is the switch that turns that off, and Netlify serves it the same way.
+// Nothing here promises a redirect that does not exist.
+---
+<Base
+  title="Tady nic není — Riplay"
+  description="Adresa, na kterou se nedá dojít: odkaz je starý nebo je v něm překlep. Odtud se dá jít na díly, nástroje nebo zadat práci."
+>
+  <section class="sheet wrap">
+    <p class="eyebrow">404 · nic</p>
+    <h1 style="margin-top:14px">Na tuhle adresu se nedá <em>dojít</em>.</h1>
+
+    <p class="lead" style="max-width:60ch">
+      Buď je odkaz starý, nebo je v něm překlep. Nic tady neschovávám — tahle stránka prostě
+      není, a proto to říká nahlas místo aby předstírala, že jsem tě přesměroval.
+    </p>
+
+    <div class="facts" style="max-width:520px;margin-top:34px">
+      <div><span>domů</span><b><a href="/">co je v dílně</a></b></div>
+      <div><span>díly</span><b><a href="/dil/">jak vznikaly</a></b></div>
+      <div><span>nástroje</span><b><a href="/nastroje/">písmo na dráhu, převod, g-code</a></b></div>
+      <div><span>práce</span><b><a href="/zakazka/">zadat díl</a></b></div>
+    </div>
+
+    <p class="mono dim" style="margin-top:26px;font-size:11px">
+      Když si myslíš, že tu něco být má, napiš na <a href="mailto:info@riplay.cz" style="text-decoration:underline">info@riplay.cz</a>.
+    </p>
+  </section>
+</Base>

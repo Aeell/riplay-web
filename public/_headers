@@ -1,0 +1,12 @@
+# Cloudflare Pages headers — the counterpart of netlify.toml, same rules in this host's syntax.
+# Pages' own defaults already send HTML with `public, max-age=0, must-revalidate`, so only the
+# immutable case has to be stated. If both files ever disagree, netlify.toml is the one that
+# describes the live site today; keep them in step when either changes.
+
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY

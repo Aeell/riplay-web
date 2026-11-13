@@ -48,6 +48,34 @@ of moving the nameservers. Let's Encrypt issued `CN=riplay.cz` covering `riplay.
 the OVH form quirks and the certificate dates are in `docs/02-handoff.md` §2.
 
 **Done:** `https://riplay.cz` serves this build over a valid certificate, no parking page.
+
+#### D3 · amendment — Cloudflare Pages, drafted 2026-11-13 (not applied)
+
+Netlify's deploys are paused on credits (15 per production deploy), so the move is drafted but
+**deliberately not executed**: no account, no DNS change, no deploy. `docs/03-pages-migration.md`
+is the reviewable plan; this entry is what lives in the repo.
+
+- **Config:** `wrangler.toml` (project name, `pages_build_output_dir = "./dist"`, compatibility
+  date, no bindings), `public/_headers` (netlify.toml's rules in Pages syntax), and the existing
+  `public/_routes.json` + `functions/api/font.js` from the original kit.
+- **Local test on the real runtime:** `wrangler` as a devDependency, `npm run preview:pages`
+  (workerd, not a static server) and `npm run verify:pages` — 17 checks, all passing, including
+  the Function bundled from source, the family guard, headers, the 308 to a canonical slash URL,
+  and the sitemap/robots.
+- **One regression caught by testing, fixed here:** Pages serves `200` + the homepage for every
+  unknown URL unless the build has a top-level `404.html` (documented SPA fallback). That would
+  have manufactured soft 404s right after D10. `src/pages/404.astro` now produces it, and the
+  local test asserts both the status and the body.
+- **The real decision is DNS, not config:** Pages cannot serve an apex without the zone's
+  nameservers, so the move reverses D3's "one A record at OVH" trade-off. The runbook copies and
+  diffs every record — five `MX`, SPF, and DKIM/DMARC *if the export shows them* — before any
+  switch, with a Gate 0 (approve the draft), Gate 1 (approve the nameserver switch) and a
+  documented rollback.
+
+**Done (when it happens):** `https://riplay.cz` served by Pages over a valid certificate,
+`verify:pages` green against the custom domain, mail proving delivery, and Rich Results +
+Search Console finally runnable.
+
 IPv4 verified; IPv6 unverified only because the laptop has no IPv6 route.
 
 ### D3b — The contact channel actually works **[gate]**
