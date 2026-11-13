@@ -447,3 +447,11 @@ h1 {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition-duration: 0.01ms !important; }
 }
+
+/* A missing fact must not read as a fact: the gap is dimmer than data and sits on a broken
+   rule, so "doplní se" is visibly not a value. `.facts b.gap` keeps its boxed variant. */
+.gap {
+  color: var(--dim);
+  font-weight: 400;
+  border-bottom: 1px dashed var(--line);
+}
