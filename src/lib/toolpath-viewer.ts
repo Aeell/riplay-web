@@ -7,8 +7,8 @@
 //
 // Attributes:
 //   data-stack     paint layers 0…n cumulatively (a print in progress) instead of one at a time
-//   data-controls  show the scrubber (slider, layer label, prev/next)
 //   data-interval  ms per layer when playing (default 120)
+// The scrubber is markup, rendered by the component only when `controls` is set.
 //
 // Methods: setLayers(layers, bounds?), show(i), next(), prev(), play(), stop()
 // Event:   layerchange  { index, layer, count }
@@ -33,6 +33,7 @@ export class ToolpathViewerElement extends HTMLElement {
   private layerLabel: HTMLElement | null = null;
   private zLabel: HTMLElement | null = null;
   private hint: HTMLElement | null = null;
+  private onResize = () => this.draw();
 
   connectedCallback() {
     this.canvas = this.querySelector('canvas');
@@ -45,13 +46,13 @@ export class ToolpathViewerElement extends HTMLElement {
     this.rangeInput?.addEventListener('input', () => this.show(Number(this.rangeInput?.value ?? 0)));
     this.querySelector('[data-prev]')?.addEventListener('click', () => this.show(this.index - 1));
     this.querySelector('[data-next]')?.addEventListener('click', () => this.show(this.index + 1));
-    window.addEventListener('resize', () => this.draw());
+    window.addEventListener('resize', this.onResize);
     this.draw();
   }
 
   disconnectedCallback() {
     this.stop();
-    window.removeEventListener('resize', () => this.draw());
+    window.removeEventListener('resize', this.onResize);
   }
 
   get stack(): boolean {
