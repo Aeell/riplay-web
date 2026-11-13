@@ -541,6 +541,19 @@ Three things must be true before the first message leaves, and two of them are t
 Reviews are recorded here with what they found, because a review that only says "looks good"
 is worth nothing, and a defect found is more useful than a defect avoided.
 
+**2026-11-13 · D18 follow-up (the viewer's edges).** Two things the previous passes missed:
+
+1. **The Replay announced its drawing twice.** The SVG has its own `<title>`/`<desc>`, and the
+   canvas laid over it carried `role="img"` with its own label, so a screen reader described the
+   same picture twice, the second time without meaning. The viewer now takes `decorative`, which
+   removes the canvas from the accessibility tree entirely; the toolbox viewer still names itself
+   because it is the only thing on that page. Verified in the live DOM: the Replay exposes exactly
+   one image, the SVG, with its own title.
+2. **The step buttons were always enabled**, so "← předchozí" on layer 1 and "další →" on the
+   last layer were dead targets that still took focus and a click. `show()` now disables them at
+   the ends of the range, and `.btn:disabled` finally has a style (dim ink, no hover fill, default
+   cursor) so the state is visible rather than merely true.
+
 **2026-11-13 · D17 + D18 (viewer, shared renderer).** Found by running the code against a real
 sliced file, then re-reading it, not by reading alone:
 

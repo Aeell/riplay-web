@@ -10,6 +10,12 @@ interface Props {
   /** may be told to play() by the page */
   interval?: number;
   label?: string;
+  /**
+   * For a viewer laid over a drawing that already describes itself (the Replay's SVG has its own
+   * title and desc): keep the canvas out of the accessibility tree instead of announcing a second
+   * description of the same picture on top of the first.
+   */
+  decorative?: boolean;
   hint?: string;
   /** shortest the canvas may get, in px */
   minHeight?: number;
@@ -21,6 +27,7 @@ const {
   stack = false,
   interval = 120,
   label = 'Náhled drah nástroje',
+  decorative = false,
   hint = '',
   minHeight = 260,
   class: className,
@@ -34,7 +41,10 @@ const {
   data-interval={String(interval)}
 >
   <div class="tpv">
-    <canvas role="img" aria-label={label}></canvas>
+    <canvas
+      role={decorative ? undefined : 'img'}
+      aria-label={decorative ? undefined : label}
+      aria-hidden={decorative ? 'true' : undefined}></canvas>
     <p class="tpv-hint mono dim" data-hint hidden={!hint}>{hint}</p>
   </div>
 

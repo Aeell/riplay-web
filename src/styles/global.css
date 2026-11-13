@@ -134,6 +134,15 @@ h1 {
 .btn-quiet { border-color: var(--line); color: var(--dim); }
 .btn-quiet:hover { background: var(--line); color: var(--ink); }
 
+/* At the ends of a range the step button is disabled, and it has to look it: no hover fill, no
+   pointer. Kept last so it wins over both variants above without !important. */
+.btn:disabled, .btn:disabled:hover {
+  border-color: var(--line-soft);
+  color: var(--dimmer);
+  background: transparent;
+  cursor: default;
+}
+
 /* ── sheets ───────────────────────────────────────────── */
 
 .sheet { border-top: 1px solid var(--line); padding: clamp(40px, 6vw, 72px) 0; }

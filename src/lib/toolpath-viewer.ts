@@ -37,6 +37,8 @@ export class ToolpathViewerElement extends HTMLElement {
   private layerLabel: HTMLElement | null = null;
   private zLabel: HTMLElement | null = null;
   private hint: HTMLElement | null = null;
+  private prev: HTMLButtonElement | null = null;
+  private next: HTMLButtonElement | null = null;
 
   connectedCallback() {
     this.canvas = this.querySelector('canvas');
@@ -45,10 +47,12 @@ export class ToolpathViewerElement extends HTMLElement {
     this.layerLabel = this.querySelector('[data-layer]');
     this.zLabel = this.querySelector('[data-z]');
     this.hint = this.querySelector('[data-hint]');
+    this.prev = this.querySelector('[data-prev]');
+    this.next = this.querySelector('[data-next]');
 
     this.rangeInput?.addEventListener('input', () => this.show(Number(this.rangeInput?.value ?? 0)));
-    this.querySelector('[data-prev]')?.addEventListener('click', () => this.show(this.index - 1));
-    this.querySelector('[data-next]')?.addEventListener('click', () => this.show(this.index + 1));
+    this.prev?.addEventListener('click', () => this.show(this.index - 1));
+    this.next?.addEventListener('click', () => this.show(this.index + 1));
 
     // Watch the element, not the window: it is sized by the layout around it (a grid column, a
     // drawing it is laid over), and that can change without anyone resizing the window.
@@ -95,6 +99,9 @@ export class ToolpathViewerElement extends HTMLElement {
       this.rangeInput.setAttribute('aria-valuetext', label);
     }
     if (this.layerLabel) this.layerLabel.textContent = label;
+    // A button that would do nothing is not a target: at the ends of the range, say so.
+    if (this.prev) this.prev.disabled = this.index === 0;
+    if (this.next) this.next.disabled = this.index === this.layers.length - 1;
     if (this.zLabel) this.zLabel.textContent = `z ${Number.isFinite(layer.z) ? layer.z.toFixed(2) : '—'} mm`;
     this.draw();
     this.dispatchEvent(
