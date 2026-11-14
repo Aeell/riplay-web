@@ -28,6 +28,9 @@ jobs:
 
       - run: npm ci
 
+      # The loader check drives a real Chromium; the library ships without one.
+      - run: npx playwright install --with-deps chromium
+
       # Build + every verifier, including the Pages check on workerd (the script starts and stops
       # wrangler itself) and the one network-dependent check, which runs last.
       - run: npm run verify:all

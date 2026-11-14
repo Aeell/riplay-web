@@ -85,7 +85,7 @@ async function stopPages(child) {
 const timings = [];
 try {
   timings.push(['build', run('build (dist/)', ['run', 'build'])]);
-  for (const name of ['mesh', 'font', 'paths', 'gcode', 'seo', 'site']) {
+  for (const name of ['mesh', 'font', 'paths', 'gcode', 'loader', 'seo', 'site']) {
     timings.push([`verify:${name}`, run(`verify:${name}`, ['run', '-s', `verify:${name}`])]);
   }
 
