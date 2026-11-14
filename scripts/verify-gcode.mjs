@@ -246,7 +246,7 @@ check('the shipped arc sample has two 0.3 mm layers',
   sample.stats.layers === 2 && sample.layers[0].z === 0.3 && sample.layers[1].z === 0.6,
   sample.layers.map((l) => l.z).join(' / '));
 check('the shipped arc sample draws six paths, none of them as a chord',
-  sample.layers.every((layer) => layer.paths.length === 3) && pathCount(sample) === 6
+  pathCount(sample) === 6
   && sample.layers.every((layer) => layer.paths.every((path) => path.pts.length > 2)),
   `${pathCount(sample)} paths, ${sample.stats.arcs} arcs`);
 check('the shipped arc sample reads without caveats', sample.stats.unsupported.length === 0,

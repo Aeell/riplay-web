@@ -130,6 +130,17 @@ for (const file of htmlFiles) {
 check(`internal references resolve (${linkCount} checked)`, broken.length === 0, broken.slice(0, 6).join(', '));
 check('anchors point at ids that exist', lostFragments.length === 0, lostFragments.slice(0, 6).join(', '));
 
+// Scripts load local files too (the G-code samples are fetched by path). A renamed file would fail
+// only in the browser, so every quoted local file path with an extension in the built JS must exist
+// in dist/. The bundle passes these through variables, so the check reads the literals themselves.
+const scriptFiles = new Set();
+for (const file of jsFiles) {
+  for (const m of read(file).matchAll(/["'`](\/[\w\-/]+\.[a-z0-9]{2,5})["'`]/gi)) scriptFiles.add(m[1]);
+}
+const missingScriptFiles = [...scriptFiles].filter((path) => !resolve(path));
+check(`local files named in built JS exist (${scriptFiles.size} checked)`, missingScriptFiles.length === 0 && scriptFiles.size > 0,
+  scriptFiles.size === 0 ? 'none found' : missingScriptFiles.join(', '));
+
 // ── 2. gzip budgets ────────────────────────────────────────────────────────────────────────
 
 for (const file of htmlFiles) {
