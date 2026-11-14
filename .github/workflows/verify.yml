@@ -28,8 +28,11 @@ jobs:
 
       - run: npm ci
 
-      # The loader check drives a real Chromium; the library ships without one.
-      - run: npx playwright install --with-deps chromium
+      # The loader check drives a real Chromium; the library ships without one. Run the project's
+      # own CLI, not `npx playwright`: that name is not in our dependencies, so npx downloads a
+      # fresh `playwright` from the registry and can fetch a browser revision that the pinned
+      # playwright-core does not look for.
+      - run: ./node_modules/.bin/playwright-core install --with-deps chromium
 
       # Build + every verifier, including the Pages check on workerd (the script starts and stops
       # wrangler itself) and the one network-dependent check, which runs last.

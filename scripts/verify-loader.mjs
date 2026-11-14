@@ -5,7 +5,7 @@
 //   npm run verify:loader
 //
 // Serves dist/ itself through scripts/serve-local.mjs on a private port, so nothing else needs
-// to be running. Needs Chromium: `npx playwright install chromium` (CI does this too).
+// to be running. Needs Chromium: `npx playwright-core install chromium` (CI does this too).
 
 import { spawn } from 'node:child_process';
 import { chromium } from 'playwright-core';
@@ -80,6 +80,10 @@ try {
   check('no uncaught page errors', errors.length === 0, errors.join(' | '));
 } catch (error) {
   console.log(`FAIL  ${error.message.split('\n')[0]}`);
+  if (/Executable doesn't exist/.test(error.message)) {
+    console.log('      Chromium is not installed for this playwright-core version.');
+    console.log('      Install it with: npx playwright-core install chromium  (add --with-deps on CI)');
+  }
   failures += 1;
 } finally {
   await browser?.close();
